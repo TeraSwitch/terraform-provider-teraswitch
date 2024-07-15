@@ -8,8 +8,9 @@ import (
 	"flag"
 	"log"
 
-	"github.com/TeraSwitch/terraform-provider/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+
+	"github.com/TeraSwitch/terraform-provider/provider"
 )
 
 //go:generate terraform fmt -recursive ./examples/

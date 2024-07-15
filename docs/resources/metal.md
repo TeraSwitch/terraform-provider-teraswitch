@@ -47,14 +47,14 @@ Metal
 
 Required:
 
-- `device` (String)
-- `file_system` (String)
-- `mount_point` (String)
-- `name` (String)
+- `device` (String) The name of the storage device to create a partition on. It can the name of a RAID array or a physical device.
+- `file_system` (String) The type of filesystem for the partition to be initialized with.
+- `mount_point` (String) The mount point of the partition.
+- `name` (String) The name of the partition.
 
 Optional:
 
-- `size_bytes` (Number)
+- `size_bytes` (Number) The size of the partition in bytes. If not specified, the remainder of the space will be used.
 
 
 <a id="nestedatt--raid_arrays"></a>
@@ -62,12 +62,12 @@ Optional:
 
 Required:
 
-- `file_system` (String)
-- `members` (List of String)
-- `mount_point` (String)
-- `name` (String)
-- `type` (String)
+- `file_system` (String) The type of filesystem for the RAID array to be initialized with.
+- `members` (List of String) The members of the RAID array. These can be device or partition names.
+- `mount_point` (String) The mount point of the array.
+- `name` (String) The name of the raid array. For example: "md0"
+- `type` (String) The type of the raid array.
 
 Optional:
 
-- `size_bytes` (Number)
+- `size_bytes` (Number) The size of the RAID array in bytes.

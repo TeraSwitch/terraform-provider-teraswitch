@@ -7,11 +7,13 @@ import (
 
 	"github.com/TeraSwitch/terraform-provider/client"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
 )
@@ -81,6 +83,21 @@ func (r *MetalResource) Metadata(ctx context.Context, req resource.MetadataReque
 	resp.TypeName = req.ProviderTypeName + "_metal"
 }
 
+var fileSystemValidator validator.String = stringvalidator.OneOf(
+	string(client.FileSystemUnknown),
+	string(client.FileSystemUnformatted),
+	string(client.FileSystemExt2),
+	string(client.FileSystemExt4),
+	string(client.FileSystemXfs),
+	string(client.FileSystemFat32),
+	string(client.FileSystemVfat),
+	string(client.FileSystemSwap),
+	string(client.FileSystemRamfs),
+	string(client.FileSystemTmpfs),
+	string(client.FileSystemBtrfs),
+	string(client.FileSystemZfsroot),
+)
+
 func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
@@ -147,23 +164,25 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
+							MarkdownDescription: "The name of the partition.",
 							Required:            true,
-							MarkdownDescription: "",
 						},
 						"device": schema.StringAttribute{
+							MarkdownDescription: "The name of the storage device to create a partition on. It can the name of a RAID array or a physical device.",
 							Required:            true,
-							MarkdownDescription: "",
 						},
 						"size_bytes": schema.Int64Attribute{
-							Optional: true,
+							MarkdownDescription: "The size of the partition in bytes. If not specified, the remainder of the space will be used.",
+							Optional:            true,
 						},
 						"file_system": schema.StringAttribute{
+							MarkdownDescription: "The type of filesystem for the partition to be initialized with.",
 							Required:            true,
-							MarkdownDescription: "",
+							Validators:          []validator.String{fileSystemValidator},
 						},
 						"mount_point": schema.StringAttribute{
+							MarkdownDescription: "The mount point of the partition.",
 							Required:            true,
-							MarkdownDescription: "",
 						},
 					},
 				},
@@ -174,28 +193,38 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
+							MarkdownDescription: "The name of the raid array. For example: \"md0\"",
 							Required:            true,
-							MarkdownDescription: "",
 						},
 						"type": schema.StringAttribute{
+							MarkdownDescription: "The type of the raid array.",
 							Required:            true,
-							MarkdownDescription: "",
+							Validators: []validator.String{
+								stringvalidator.OneOf(
+									string(client.RaidTypeNone),
+									string(client.RaidTypeRaid0),
+									string(client.RaidTypeRaid1),
+									string(client.RaidTypeUnknown),
+								),
+							},
 						},
 						"members": schema.ListAttribute{
+							MarkdownDescription: "The members of the RAID array. These can be device or partition names.",
 							Required:            true,
-							MarkdownDescription: "",
 							ElementType:         types.StringType,
 						},
 						"file_system": schema.StringAttribute{
+							MarkdownDescription: "The type of filesystem for the RAID array to be initialized with.",
 							Required:            true,
-							MarkdownDescription: "",
+							Validators:          []validator.String{fileSystemValidator},
 						},
 						"mount_point": schema.StringAttribute{
+							MarkdownDescription: "The mount point of the array.",
 							Required:            true,
-							MarkdownDescription: "",
 						},
 						"size_bytes": schema.Int64Attribute{
-							Optional: true,
+							MarkdownDescription: "The size of the RAID array in bytes.",
+							Optional:            true,
 						},
 					},
 				},
@@ -286,7 +315,7 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 				Name:       dPart.Name.ValueStringPointer(),
 				Device:     dPart.Device.ValueStringPointer(),
 				SizeBytes:  dPart.SizeBytes.ValueInt64Pointer(),
-				FileSystem: PtrTo(client.FileSystem(3)), // TODO: fix
+				FileSystem: PtrTo(client.FileSystem(dPart.FileSystem.ValueString())),
 				MountPoint: dPart.MountPoint.ValueStringPointer(),
 			}
 			parts = append(parts, part)
@@ -298,11 +327,11 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 		var arrays []client.RaidArray
 		for _, dRaid := range data.RaidArrays {
 			arr := client.RaidArray{
-				FileSystem: PtrTo(client.FileSystem(3)), // TODO: fix
+				FileSystem: PtrTo(client.FileSystem(dRaid.FileSystem.ValueString())),
 				MountPoint: dRaid.MountPoint.ValueStringPointer(),
 				Name:       dRaid.Name.ValueStringPointer(),
 				SizeBytes:  dRaid.SizeBytes.ValueInt64Pointer(),
-				Type:       PtrTo(client.RaidType(3)),
+				Type:       PtrTo(client.RaidType(dRaid.Type.ValueString())),
 			}
 			resp.Diagnostics.Append(
 				dRaid.Members.ElementsAs(ctx, &arr.Members, false)...,

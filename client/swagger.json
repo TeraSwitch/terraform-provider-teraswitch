@@ -3877,22 +3877,22 @@
       },
       "FileSystem": {
         "enum": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11
+          "Unknown",
+          "Unformatted",
+          "Ext2",
+          "Ext4",
+          "Xfs",
+          "Fat32",
+          "Vfat",
+          "Swap",
+          "Ramfs",
+          "Tmpfs",
+          "Btrfs",
+          "Zfsroot"
         ],
-        "type": "integer",
+        "type": "string",
         "description": "The supported filesystems for metal services",
-        "format": "int32"
+        "format": "string"
       },
       "GetInvoiceResponse": {
         "type": "object",
@@ -5344,24 +5344,21 @@
       },
       "PowerCommand": {
         "enum": [
-          0,
-          1,
-          2,
-          3
+          "PowerOff",
+          "PowerOn"
         ],
-        "type": "integer",
-        "format": "int32"
+        "type": "string",
+        "format": "string"
       },
       "PowerState": {
         "enum": [
-          0,
-          1,
-          2,
-          3
+          "On",
+          "Off",
+          "Unknown"
         ],
-        "type": "integer",
+        "type": "string",
         "description": "Represents the power state of a service.",
-        "format": "int32"
+        "format": "string"
       },
       "ProvisioningEvent": {
         "type": "object",
@@ -5438,14 +5435,14 @@
       },
       "RaidType": {
         "enum": [
-          0,
-          1,
-          2,
-          3
+          "Unknown",
+          "None",
+          "Raid0",
+          "Raid1"
         ],
-        "type": "integer",
+        "type": "string",
         "description": "The type of RAID array",
-        "format": "int32"
+        "format": "string"
       },
       "Region": {
         "type": "object",

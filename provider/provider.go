@@ -97,7 +97,7 @@ func (p *TeraswitchProvider) Configure(ctx context.Context, req provider.Configu
 
 	httpClient := http.Client{}
 
-	client, err := client.NewClientWithResponses("https://api.tsw.io",
+	reqClient, err := client.NewClientWithResponses("https://api.tsw.io",
 		client.WithHTTPClient(&httpClient),
 		client.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
 			req.Header.Add("Authorization", "Bearer "+data.APIKey.ValueString())
@@ -110,7 +110,7 @@ func (p *TeraswitchProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	pd := &ProviderData{
-		client:    client,
+		client:    reqClient,
 		projectID: data.ProjectID.ValueInt64(),
 	}
 

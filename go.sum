@@ -40,8 +40,6 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1VwoXQT9A3Wy9MM3WgvqSxFWenqJduM=
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/deepmap/oapi-codegen/v2 v2.2.0 h1:FW4f7C0Xb6EaezBSB3GYw2QGwHD5ChDflG+3xSZBdvY=
-github.com/deepmap/oapi-codegen/v2 v2.2.0/go.mod h1:L4zUv7ULYDtYSb/aYk/xO3OYcQU6BoU/0viULkbi2DE=
 github.com/emirpasic/gods v1.18.1 h1:FXtiHYKDGKCW2KzwZKx0iC0PQmdlorYgdFG9jPXJ1Bc=
 github.com/emirpasic/gods v1.18.1/go.mod h1:8tpGGwCnJ5H4r6BWwaV6OrWmMoPhUl5jm/FMNAnJvWQ=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
@@ -113,8 +111,10 @@ github.com/hashicorp/terraform-json v0.22.1 h1:xft84GZR0QzjPVWs4lRUwvTcPnegqlyS7
 github.com/hashicorp/terraform-json v0.22.1/go.mod h1:JbWSQCLFSXFFhg42T7l9iJwdGXBYV8fmmD6o/ML4p3A=
 github.com/hashicorp/terraform-plugin-docs v0.19.3 h1:xoxpeIuBfnoGxXY0dTajdj4GjEv6TihZdj0lHNXbKew=
 github.com/hashicorp/terraform-plugin-docs v0.19.3/go.mod h1:4pLASsatTmRynVzsjEhbXZ6s7xBlUw/2Kt0zfrq8HxA=
-github.com/hashicorp/terraform-plugin-framework v1.9.0 h1:caLcDoxiRucNi2hk8+j3kJwkKfvHznubyFsJMWfZqKU=
-github.com/hashicorp/terraform-plugin-framework v1.9.0/go.mod h1:qBXLDn69kM97NNVi/MQ9qgd1uWWsVftGSnygYG1tImM=
+github.com/hashicorp/terraform-plugin-framework v1.10.0 h1:xXhICE2Fns1RYZxEQebwkB2+kXouLC932Li9qelozrc=
+github.com/hashicorp/terraform-plugin-framework v1.10.0/go.mod h1:qBXLDn69kM97NNVi/MQ9qgd1uWWsVftGSnygYG1tImM=
+github.com/hashicorp/terraform-plugin-framework-validators v0.13.0 h1:bxZfGo9DIUoLLtHMElsu+zwqI4IsMZQBRRy4iLzZJ8E=
+github.com/hashicorp/terraform-plugin-framework-validators v0.13.0/go.mod h1:wGeI02gEhj9nPANU62F2jCaHjXulejm/X+af4PdZaNo=
 github.com/hashicorp/terraform-plugin-go v0.23.0 h1:AALVuU1gD1kPb48aPQUjug9Ir/125t+AAurhqphJ2Co=
 github.com/hashicorp/terraform-plugin-go v0.23.0/go.mod h1:1E3Cr9h2vMlahWMbsSEcNrOCxovCZhOOIXjFHbjc/lQ=
 github.com/hashicorp/terraform-plugin-log v0.9.0 h1:i7hOA+vdAItN1/7UrfBqBwvYPQ9TFvymaRGZED3FCV0=
@@ -180,6 +180,8 @@ github.com/mitchellh/reflectwalk v1.0.2 h1:G2LzWKi524PWgd3mLHV8Y5k7s6XUvT0Gef6zx
 github.com/mitchellh/reflectwalk v1.0.2/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 h1:RWengNIwukTxcDr9M+97sNutRR1RKhG96O6jWumTTnw=
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
+github.com/oapi-codegen/oapi-codegen/v2 v2.3.0 h1:rICjNsHbPP1LttefanBPnwsSwl09SqhCO7Ee623qR84=
+github.com/oapi-codegen/oapi-codegen/v2 v2.3.0/go.mod h1:4k+cJeSq5ntkwlcpQSxLxICCxQzCL772o30PxdibRt4=
 github.com/oapi-codegen/runtime v1.1.1 h1:EXLHh0DXIJnWhdRPN2w4MXAzFyE4CskzhNLUmtpMYro=
 github.com/oapi-codegen/runtime v1.1.1/go.mod h1:SK9X900oXmPWilYR5/WKPzt3Kqxn/uS/+lbpREv+eCg=
 github.com/oklog/run v1.0.0 h1:Ru7dDtJNOyC66gQ5dQmaCa0qIsAUFY3sFpK1Xk8igrw=
