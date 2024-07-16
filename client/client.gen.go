@@ -89,10 +89,10 @@ const (
 
 // Defines values for RaidType.
 const (
-	None    RaidType = "None"
-	Raid0   RaidType = "Raid0"
-	Raid1   RaidType = "Raid1"
-	Unknown RaidType = "Unknown"
+	RaidTypeNone    RaidType = "None"
+	RaidTypeRaid0   RaidType = "Raid0"
+	RaidTypeRaid1   RaidType = "Raid1"
+	RaidTypeUnknown RaidType = "Unknown"
 )
 
 // Defines values for ServiceType.
@@ -116,10 +116,10 @@ const (
 
 // Defines values for StorageType.
 const (
-	N0 StorageType = 0
-	N1 StorageType = 1
-	N2 StorageType = 2
-	N3 StorageType = 3
+	StorageTypeHDD     StorageType = "HDD"
+	StorageTypeNVME    StorageType = "NVME"
+	StorageTypeSSD     StorageType = "SSD"
+	StorageTypeUnknown StorageType = "Unknown"
 )
 
 // Account defines model for Account.
@@ -1686,7 +1686,7 @@ type SshKey struct {
 type Status int32
 
 // StorageType Describes the storage type of the drive. This could be HDD, SSD, or NVME.
-type StorageType int32
+type StorageType string
 
 // UpdateNetworkRequest Details about what to be updated about the network
 type UpdateNetworkRequest struct {

@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/TeraSwitch/terraform-provider/client"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -351,23 +350,19 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
-	spew.Dump(res.JSON200)
-
 	fmt.Println(string(res.Body))
 	if res.StatusCode() != http.StatusOK {
 		resp.Diagnostics.AddError("Client Error",
-			fmt.Sprintf("Unable to create get v2 network, got error: %s", string(res.Body)),
+			fmt.Sprintf("Unable to create get v2 metal, got error: %s", string(res.Body)),
 		)
 		return
 	}
 
 	resBody := res.JSON200.Result
 
-	// For the purposes of this example code, hardcoding a response value to
-	// save into the Terraform state.
 	data.Id = types.Int64Value(*resBody.Id)
 
-	tflog.Trace(ctx, "created a resource")
+	tflog.Trace(ctx, "created v2 metal")
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -383,38 +378,66 @@ func (r *MetalResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
-	//     return
-	// }
+	res, err := r.providerData.client.GetV2MetalIdWithResponse(ctx, data.Id.ValueInt64())
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get v2 metal, got error: %s", err))
+		return
+	}
 
+	if res.StatusCode() != http.StatusOK {
+		resp.Diagnostics.AddError("Client Error",
+			fmt.Sprintf("Unable to get v2 metal, got error: %s", string(res.Body)),
+		)
+		return
+	}
+
+	// resBody := res.JSON200.Result
+
+	fmt.Println("read")
+	fmt.Println(string(res.Body))
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
 func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var data MetalResourceModel
+	var plan MetalResourceModel
+	var state MetalResourceModel
 
 	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
-	//     return
-	// }
+	// Read the current state
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !plan.DisplayName.Equal(state.DisplayName) {
+		tflog.Trace(ctx, "display name changed, updating...")
+		res, err := r.providerData.client.PostV2MetalIdRenameWithResponse(ctx, state.Id.ValueInt64(), client.PostV2MetalIdRenameJSONRequestBody{
+			Name: plan.DisplayName.ValueStringPointer(),
+		})
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update v2 metal name, got error: %s", err))
+			return
+		}
+
+		if res.StatusCode() != http.StatusOK {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to update v2 metal name, got error: %s", string(res.Body)),
+			)
+			return
+		}
+		fmt.Println("update display name")
+		fmt.Println(string(res.Body))
+		tflog.Trace(ctx, "display name updated")
+	}
 
 	// Save updated data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -427,13 +450,6 @@ func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
-	//     return
-	// }
 }
 
 func (r *MetalResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

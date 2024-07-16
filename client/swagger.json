@@ -5764,14 +5764,14 @@
       },
       "StorageType": {
         "enum": [
-          0,
-          1,
-          2,
-          3
+          "Unknown",
+          "HDD",
+          "SSD",
+          "NVME"
         ],
-        "type": "integer",
+        "type": "string",
         "description": "Describes the storage type of the drive. This could be HDD, SSD, or NVME.",
-        "format": "int32"
+        "format": "string"
       },
       "UpdateNetworkRequest": {
         "type": "object",
