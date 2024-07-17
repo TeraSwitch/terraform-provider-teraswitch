@@ -545,6 +545,9 @@ func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 	// }
 	// delReq.Header.Add("Authorization", "Bearer "+r.providerData.apiKey)
 
+	// out, _ := httputil.DumpRequest(delReq, false)
+	// fmt.Println(string(out))
+
 	// res, err := r.providerData.httpClient.Do(delReq)
 	// if err != nil {
 	// 	resp.Diagnostics.AddError("Client Error",

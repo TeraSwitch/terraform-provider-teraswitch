@@ -22,6 +22,7 @@ Metal
 
 ### Optional
 
+- `desired_power_state` (String) The desired power state for the metal instance.
 - `disks` (Map of String) Dictionary of disk names and sizes in GB. If not specified, the default configuration for the metal tier will be used. The key is the disk name and the value is the size in GB.
 - `display_name` (String) The display name of the network. This is optional.
 - `image_id` (String) The image to use when creating this service. Available images can be retrieved via the images endpoint.
@@ -30,7 +31,6 @@ Metal
 - `partitions` (Attributes List) Partitions to be created on the metal service. Not specifying this will result in a single root partition being created. (see [below for nested schema](#nestedatt--partitions))
 - `password` (String) The password to be set for the root user. If not provided, a random password will be generated.
 - `project_id` (Number) The ID of the project that the metal will be created in.
-- `quantity` (Number) The number of services to be created. By default, one will be created.
 - `raid_arrays` (Attributes List) Raid arrays to be created on the metal service. Can reference physical device names or partitions from mediums of the same class. (see [below for nested schema](#nestedatt--raid_arrays))
 - `reserve_pricing` (Boolean) Denotes if the metal service is being reserved for a whole year. If so, it gets the discounted rate
 - `ssh_key_ids` (List of Number) The SSH key ids to be added to the service. These keys will be added to the authorized_keys file for the root user.
