@@ -7,11 +7,15 @@ import (
 
 	"github.com/TeraSwitch/terraform-provider/client"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
@@ -32,24 +36,24 @@ type MetalResource struct {
 
 // MetalResourceModel describes the resource data model.
 type MetalResourceModel struct {
-	Id             types.Int64           `tfsdk:"id"`
-	ProjectID      types.Int64           `tfsdk:"project_id"`
-	RegionID       types.String          `tfsdk:"region_id"`
-	DisplayName    types.String          `tfsdk:"display_name"`
-	TierID         types.String          `tfsdk:"tier_id"`
-	ImageID        types.String          `tfsdk:"image_id"`
-	SSHKeyIDs      types.List            `tfsdk:"ssh_key_ids"`
-	Password       types.String          `tfsdk:"password"`
-	UserData       types.String          `tfsdk:"user_data"`
-	Tags           types.List            `tfsdk:"tags"`
-	MemoryGB       types.Int64           `tfsdk:"memory_gb"`
-	Disks          types.Map             `tfsdk:"disks"`
-	Partitions     []MetalPartitionModel `tfsdk:"partitions"`
-	RaidArrays     []MetalRaidArrayModel `tfsdk:"raid_arrays"`
-	IPXEURL        types.String          `tfsdk:"ipxe_url"`
-	TemplateID     types.Int64           `tfsdk:"template_id"`
-	Quantity       types.Int64           `tfsdk:"quantity"`
-	ReservePricing types.Bool            `tfsdk:"reserve_pricing"`
+	Id                types.Int64           `tfsdk:"id"`
+	ProjectID         types.Int64           `tfsdk:"project_id"`
+	RegionID          types.String          `tfsdk:"region_id"`
+	DisplayName       types.String          `tfsdk:"display_name"`
+	TierID            types.String          `tfsdk:"tier_id"`
+	ImageID           types.String          `tfsdk:"image_id"`
+	SSHKeyIDs         types.List            `tfsdk:"ssh_key_ids"`
+	Password          types.String          `tfsdk:"password"`
+	UserData          types.String          `tfsdk:"user_data"`
+	Tags              types.List            `tfsdk:"tags"`
+	MemoryGB          types.Int64           `tfsdk:"memory_gb"`
+	Disks             types.Map             `tfsdk:"disks"`
+	Partitions        []MetalPartitionModel `tfsdk:"partitions"`
+	RaidArrays        []MetalRaidArrayModel `tfsdk:"raid_arrays"`
+	IPXEURL           types.String          `tfsdk:"ipxe_url"`
+	TemplateID        types.Int64           `tfsdk:"template_id"`
+	ReservePricing    types.Bool            `tfsdk:"reserve_pricing"`
+	DesiredPowerState types.String          `tfsdk:"desired_power_state"`
 }
 
 type MetalRaidArrayModel struct {
@@ -113,10 +117,16 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 			"project_id": schema.Int64Attribute{
 				MarkdownDescription: "The ID of the project that the metal will be created in.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplaceIfConfigured(),
+				},
 			},
 			"region_id": schema.StringAttribute{
 				MarkdownDescription: "The ID of the region that the metal will be created in.",
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"display_name": schema.StringAttribute{
 				MarkdownDescription: "The display name of the network. This is optional.",
@@ -125,37 +135,61 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 			"tier_id": schema.StringAttribute{
 				MarkdownDescription: "The service tier to be created. For metal, this is typically the server config. For example: 7302p-64g would create a Epyc 7302P system with 64G of ram. Tier availability can be retrieved using the regions endpoints.",
 				Required:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"image_id": schema.StringAttribute{
 				MarkdownDescription: "The image to use when creating this service. Available images can be retrieved via the images endpoint.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"ssh_key_ids": schema.ListAttribute{
 				MarkdownDescription: "The SSH key ids to be added to the service. These keys will be added to the authorized_keys file for the root user.",
 				Optional:            true,
 				ElementType:         types.Int64Type,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
 			},
 			"password": schema.StringAttribute{
 				MarkdownDescription: "The password to be set for the root user. If not provided, a random password will be generated.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"user_data": schema.StringAttribute{
 				MarkdownDescription: "Additional user data.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"tags": schema.ListAttribute{
 				MarkdownDescription: "Tags to be added to the metal service.",
 				Optional:            true,
 				ElementType:         types.StringType,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
 			},
 			"memory_gb": schema.Int64Attribute{
 				MarkdownDescription: "The amount of memory in GB to be allocated to the metal service.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
 			},
 			"disks": schema.MapAttribute{
 				MarkdownDescription: "Dictionary of disk names and sizes in GB. If not specified, the default configuration for the metal tier will be used. The key is the disk name and the value is the size in GB.",
 				Optional:            true,
 				ElementType:         types.StringType,
+				PlanModifiers: []planmodifier.Map{
+					mapplanmodifier.RequiresReplace(),
+				},
 			},
 			"partitions": schema.ListNestedAttribute{
 				MarkdownDescription: "Partitions to be created on the metal service. Not specifying this will result in a single root partition being created.",
@@ -184,6 +218,9 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 							Required:            true,
 						},
 					},
+				},
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
 				},
 			},
 			"raid_arrays": schema.ListNestedAttribute{
@@ -227,22 +264,40 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 						},
 					},
 				},
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
 			},
 			"ipxe_url": schema.StringAttribute{
 				MarkdownDescription: "The URL to the script to use when enabling iPXE boot.",
 				Optional:            true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
 			},
 			"template_id": schema.Int64Attribute{
 				MarkdownDescription: "Template can be specified instead of image, partitions, sshKeyId, and userData.",
 				Optional:            true,
-			},
-			"quantity": schema.Int64Attribute{
-				MarkdownDescription: "The number of services to be created. By default, one will be created.",
-				Optional:            true,
+				PlanModifiers: []planmodifier.Int64{
+					int64planmodifier.RequiresReplace(),
+				},
 			},
 			"reserve_pricing": schema.BoolAttribute{
 				MarkdownDescription: "Denotes if the metal service is being reserved for a whole year. If so, it gets the discounted rate",
 				Optional:            true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
+
+			"desired_power_state": schema.StringAttribute{
+				MarkdownDescription: "The desired power state for the metal instance.",
+				Optional:            true,
+				Computed:            true,
+				Default:             stringdefault.StaticString("On"),
+				Validators: []validator.String{
+					stringvalidator.OneOf("On", "Off"),
+				},
 			},
 		},
 	}
@@ -279,11 +334,11 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 
 	projID := data.ProjectID.ValueInt64Pointer()
 	if projID == nil {
-		projID = &r.providerData.projectID
+		data.ProjectID = types.Int64Value(r.providerData.projectID)
 	}
 
 	body := client.CreateMetalRequest{
-		ProjectId:      projID,
+		ProjectId:      data.ProjectID.ValueInt64Pointer(),
 		RegionId:       data.RegionID.ValueString(),
 		DisplayName:    data.DisplayName.ValueStringPointer(),
 		TierId:         data.TierID.ValueString(),
@@ -293,7 +348,7 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 		MemoryGb:       i64PtrToi32Ptr(data.MemoryGB.ValueInt64Pointer()),
 		IpxeUrl:        data.IPXEURL.ValueStringPointer(),
 		TemplateId:     data.TemplateID.ValueInt64Pointer(),
-		Quantity:       i64PtrToi32Ptr(data.Quantity.ValueInt64Pointer()),
+		Quantity:       PtrTo(int32(1)),
 		ReservePricing: data.ReservePricing.ValueBoolPointer(),
 	}
 
@@ -436,6 +491,37 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		tflog.Trace(ctx, "display name updated")
 	}
 
+	if !plan.DesiredPowerState.Equal(state.DesiredPowerState) {
+		var cmd client.PowerCommand
+		switch plan.DesiredPowerState.ValueString() {
+		case "On":
+			cmd = client.PowerOn
+		case "Off":
+			cmd = client.PowerOff
+		default:
+			resp.Diagnostics.AddError("Provider Error",
+				fmt.Sprintf("unknown desired_power_state: %s", plan.DesiredPowerState.ValueString()),
+			)
+
+			goto end
+		}
+
+		res, err := r.providerData.client.PostV2MetalIdPowerCommandWithResponse(ctx, state.Id.ValueInt64(),
+			&client.PostV2MetalIdPowerCommandParams{
+				Command: PtrTo(cmd),
+			},
+		)
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update v2 metal power status, got error: %s", err))
+			return
+		}
+
+		fmt.Println("update power state")
+		fmt.Println(string(res.Body))
+		tflog.Trace(ctx, "power state updated")
+	}
+
+end:
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -450,8 +536,38 @@ func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		return
 	}
 
+	// delReq, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("https://api.tsw.io/v2/Metal/%d?projectId=480", data.Id.ValueInt64()), nil)
+	// if err != nil {
+	// 	resp.Diagnostics.AddError("Client Error",
+	// 		fmt.Sprintf("failed to create delete v2 metal request: %s", err),
+	// 	)
+	// 	return
+	// }
+	// delReq.Header.Add("Authorization", "Bearer "+r.providerData.apiKey)
+
+	// res, err := r.providerData.httpClient.Do(delReq)
+	// if err != nil {
+	// 	resp.Diagnostics.AddError("Client Error",
+	// 		fmt.Sprintf("failed to send delete v2 metal request: %s", err),
+	// 	)
+	// 	return
+	// }
+	// defer res.Body.Close()
+
+	// body := bytes.NewBuffer(nil)
+	// _, _ = io.Copy(body, res.Body)
+
+	// if res.StatusCode != http.StatusOK {
+	// 	resp.Diagnostics.AddError("Client Error",
+	// 		fmt.Sprintf("delete v2 metal request errored: %s", body.String()),
+	// 	)
+	// 	return
+	// }
 }
 
 func (r *MetalResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	resp.Diagnostics.AddError("Not supported",
+		"Metal resources don't currently support importing.",
+	)
+	// resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

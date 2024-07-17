@@ -28,8 +28,10 @@ type TeraswitchProvider struct {
 }
 
 type ProviderData struct {
-	projectID int64
-	client    *client.ClientWithResponses
+	httpClient *http.Client
+	projectID  int64
+	apiKey     string
+	client     *client.ClientWithResponses
 }
 
 // TeraswitchProviderModel describes the provider data model.
@@ -95,10 +97,10 @@ func (p *TeraswitchProvider) Configure(ctx context.Context, req provider.Configu
 		}
 	}
 
-	httpClient := http.Client{}
+	httpClient := &http.Client{}
 
 	reqClient, err := client.NewClientWithResponses("https://api.tsw.io",
-		client.WithHTTPClient(&httpClient),
+		client.WithHTTPClient(httpClient),
 		client.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
 			req.Header.Add("Authorization", "Bearer "+data.APIKey.ValueString())
 			return nil
@@ -110,8 +112,10 @@ func (p *TeraswitchProvider) Configure(ctx context.Context, req provider.Configu
 	}
 
 	pd := &ProviderData{
-		client:    reqClient,
-		projectID: data.ProjectID.ValueInt64(),
+		client:     reqClient,
+		httpClient: httpClient,
+		projectID:  data.ProjectID.ValueInt64(),
+		apiKey:     data.APIKey.ValueString(),
 	}
 
 	// Example client configuration for data sources and resources

@@ -35,7 +35,6 @@ func TestAccMetalResource(t *testing.T) {
 			},
 		}),
 		ImageID:        PtrTo("ubuntu-noble"),
-		Quantity:       PtrTo(1),
 		ReservePricing: PtrTo(false),
 	}
 
@@ -91,7 +90,6 @@ type testAccMetalResourceConfig struct {
 	Disks          *map[string]string
 	RaidArrays     *[]RaidArray
 	ImageID        *string
-	Quantity       *int
 	ReservePricing *bool
 }
 
@@ -135,7 +133,6 @@ resource "teraswitch_metal" "test" {
 		{{- end }}
 	]
 	image_id        = {{orNull .ImageID}}
-	quantity        = {{orNull .Quantity}}
 	reserve_pricing = {{orNull .ReservePricing}}
 }
 `
