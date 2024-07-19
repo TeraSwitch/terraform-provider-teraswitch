@@ -128,19 +128,16 @@ func (p *TeraswitchProvider) Resources(ctx context.Context) []func() resource.Re
 		NewNetworkResource,
 		NewVolumeResource,
 		NewMetalResource,
+		NewCloudComputeResource,
 	}
 }
 
 func (p *TeraswitchProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{
-		NewExampleDataSource,
-	}
+	return []func() datasource.DataSource{}
 }
 
 func (p *TeraswitchProvider) Functions(ctx context.Context) []func() function.Function {
-	return []func() function.Function{
-		NewExampleFunction,
-	}
+	return []func() function.Function{}
 }
 
 func New(version string) func() provider.Provider {

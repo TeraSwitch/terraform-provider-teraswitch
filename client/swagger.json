@@ -2693,11 +2693,11 @@
           },
           "created": {
             "type": "string",
-            "format": "date-time"
+            "format": "string"
           },
           "deleted": {
             "type": "string",
-            "format": "date-time",
+            "format": "string",
             "nullable": true
           },
           "objectType": {
@@ -2731,15 +2731,9 @@
         "additionalProperties": false
       },
       "AccountRole": {
-        "enum": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ],
-        "type": "integer",
-        "format": "int32"
+        "enum": [],
+        "type": "string",
+        "format": "string"
       },
       "ApiResponse": {
         "type": "object",
@@ -2969,11 +2963,11 @@
           },
           "created": {
             "type": "string",
-            "format": "date-time"
+            "format": "string"
           },
           "deleted": {
             "type": "string",
-            "format": "date-time",
+            "format": "string",
             "nullable": true
           },
           "projectId": {
@@ -3451,7 +3445,7 @@
           "dateCreated": {
             "type": "string",
             "description": "The timestamp for when the network was created",
-            "format": "date-time"
+            "format": "string"
           },
           "displayName": {
             "type": "string",
@@ -3524,12 +3518,12 @@
           "updatedAt": {
             "type": "string",
             "description": "The time the volume was last updated",
-            "format": "date-time"
+            "format": "string"
           },
           "createdAt": {
             "type": "string",
             "description": "The time the volume was created",
-            "format": "date-time"
+            "format": "string"
           },
           "size": {
             "type": "string",
@@ -3729,14 +3723,9 @@
         "description": "Details about the instance networks"
       },
       "DeviceVendor": {
-        "enum": [
-          0,
-          1,
-          2,
-          3
-        ],
-        "type": "integer",
-        "format": "int32"
+        "enum": [],
+        "type": "string",
+        "format": "string"
       },
       "DrivePriceResponse": {
         "type": "object",
@@ -3795,14 +3784,10 @@
         "description": "Describes a single drive slot and all the drives that can be installed\r\nin it."
       },
       "EventState": {
-        "enum": [
-          0,
-          1,
-          2
-        ],
-        "type": "integer",
+        "enum": [],
+        "type": "string",
         "description": "Represents the state of an event.",
-        "format": "int32"
+        "format": "string"
       },
       "ExtendVolumeRequest": {
         "required": [
@@ -3943,7 +3928,7 @@
           "dueDate": {
             "type": "string",
             "description": "The due date for the invoice",
-            "format": "date-time",
+            "format": "string",
             "nullable": true
           },
           "lines": {
@@ -3957,19 +3942,19 @@
           "invoiceDate": {
             "type": "string",
             "description": "The date that the invoice was created",
-            "format": "date-time",
+            "format": "string",
             "nullable": true
           },
           "datePaid": {
             "type": "string",
             "description": "The date that the invoice was paid",
-            "format": "date-time",
+            "format": "string",
             "nullable": true
           },
           "payBefore": {
             "type": "string",
             "description": "The date to pay the invoice before",
-            "format": "date-time"
+            "format": "string"
           }
         },
         "additionalProperties": false,
@@ -4254,24 +4239,24 @@
           "dueDate": {
             "type": "string",
             "description": "The due date for the invoice in UTC time.",
-            "format": "date-time",
+            "format": "string",
             "nullable": true
           },
           "datePaid": {
             "type": "string",
             "description": "The date that the invoice was created in UTC time.",
-            "format": "date-time",
+            "format": "string",
             "nullable": true
           },
           "payBefore": {
             "type": "string",
             "description": "The date to pay the invoice before in UTC time.",
-            "format": "date-time"
+            "format": "string"
           },
           "invoiceDate": {
             "type": "string",
             "description": "The date that the invoice was paid in UTC time.",
-            "format": "date-time",
+            "format": "string",
             "nullable": true
           }
         },
@@ -4499,7 +4484,7 @@
         "properties": {
           "timestamp": {
             "type": "string",
-            "format": "date-time"
+            "format": "string"
           },
           "name": {
             "type": "string",
@@ -5056,11 +5041,11 @@
           },
           "created": {
             "type": "string",
-            "format": "date-time"
+            "format": "string"
           },
           "deleted": {
             "type": "string",
-            "format": "date-time",
+            "format": "string",
             "nullable": true
           },
           "objectType": {
@@ -5376,7 +5361,7 @@
           "timestamp": {
             "type": "string",
             "description": "Gets or sets the timestamp when the event was created or updated.",
-            "format": "date-time"
+            "format": "string"
           },
           "state": {
             "$ref": "#/components/schemas/EventState"
@@ -5694,16 +5679,9 @@
         "description": "Describes a request to rename a service."
       },
       "ServiceType": {
-        "enum": [
-          0,
-          1,
-          2,
-          3,
-          4,
-          5
-        ],
-        "type": "integer",
-        "format": "int32"
+        "enum": [],
+        "type": "string",
+        "format": "string"
       },
       "SshKey": {
         "type": "object",
@@ -5714,11 +5692,11 @@
           },
           "created": {
             "type": "string",
-            "format": "date-time"
+            "format": "string"
           },
           "deleted": {
             "type": "string",
-            "format": "date-time",
+            "format": "string",
             "nullable": true
           },
           "objectType": {
@@ -5751,16 +5729,10 @@
         "description": "Represents an SSH key"
       },
       "Status": {
-        "enum": [
-          0,
-          1,
-          2,
-          3,
-          4
-        ],
-        "type": "integer",
+        "enum": [],
+        "type": "string",
         "description": "Describes the status of a service",
-        "format": "int32"
+        "format": "string"
       },
       "StorageType": {
         "enum": [

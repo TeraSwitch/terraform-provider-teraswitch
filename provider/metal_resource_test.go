@@ -11,16 +11,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAccMetalResource(t *testing.T) {
-	cfg1 := testAccMetalResourceConfig{
+var (
+	metalCfg2388g = testAccMetalResourceConfig{
 		RegionID:    PtrTo("LAX1"),
 		DisplayName: PtrTo("yeehaw"),
 		TierID:      PtrTo("2388g"),
 		ProjectID:   PtrTo(480),
 		SSHKeyIDs:   PtrTo([]int{588}),
-		// Password:       PtrTo("wnp3xev!vaq7duh-PUY"),
-		Tags:     PtrTo([]string{"tag1", "tag2"}),
-		MemoryGB: PtrTo(64),
+		Tags:        PtrTo([]string{"tag1", "tag2"}),
+		MemoryGB:    PtrTo(64),
 		Disks: PtrTo(map[string]string{
 			"nvme0n1": "960g",
 			"nvme1n1": "960g",
@@ -37,6 +36,38 @@ func TestAccMetalResource(t *testing.T) {
 		ImageID:        PtrTo("ubuntu-noble"),
 		ReservePricing: PtrTo(false),
 	}
+	_ = metalCfg2388g
+
+	metalCfg7950 = testAccMetalResourceConfig{
+		RegionID:    PtrTo("SLC1"),
+		DisplayName: PtrTo("yeehaw-amd"),
+		TierID:      PtrTo("9254"),
+		ProjectID:   PtrTo(480),
+		SSHKeyIDs:   PtrTo([]int{588}),
+		Tags:        PtrTo([]string{"tag1", "tag2"}),
+		MemoryGB:    PtrTo(384),
+		Disks: PtrTo(map[string]string{
+			"nvme0n1": "480g", // boss card
+			"nvme1n1": "3.84t",
+			"nvme2n1": "3.84t",
+		}),
+		RaidArrays: PtrTo([]RaidArray{
+			{
+				Name:       PtrTo("md0"),
+				Type:       PtrTo("Raid1"),
+				Members:    PtrTo([]string{"nvme1n1", "nvme2n1"}),
+				FileSystem: PtrTo(string(client.FileSystemExt4)),
+				MountPoint: PtrTo("/"),
+			},
+		}),
+		ImageID:        PtrTo("ubuntu-noble"),
+		ReservePricing: PtrTo(false),
+		WaitForReady:   PtrTo(true),
+	}
+)
+
+func TestAccMetalResource(t *testing.T) {
+	cfg1 := metalCfg7950
 
 	cfg2 := cfg1
 	cfg2.DisplayName = PtrTo("yeehaw2")
@@ -79,18 +110,20 @@ func TestAccMetalResource(t *testing.T) {
 }
 
 type testAccMetalResourceConfig struct {
-	RegionID       *string
-	DisplayName    *string
-	TierID         *string
-	ProjectID      *int
-	SSHKeyIDs      *[]int
-	Password       *string
-	Tags           *[]string
-	MemoryGB       *int
-	Disks          *map[string]string
-	RaidArrays     *[]RaidArray
-	ImageID        *string
-	ReservePricing *bool
+	RegionID          *string
+	DisplayName       *string
+	TierID            *string
+	ProjectID         *int
+	SSHKeyIDs         *[]int
+	Password          *string
+	Tags              *[]string
+	MemoryGB          *int
+	Disks             *map[string]string
+	RaidArrays        *[]RaidArray
+	ImageID           *string
+	ReservePricing    *bool
+	DesiredPowerState *string
+	WaitForReady      *bool
 }
 
 type RaidArray struct {
@@ -134,6 +167,8 @@ resource "teraswitch_metal" "test" {
 	]
 	image_id        = {{orNull .ImageID}}
 	reserve_pricing = {{orNull .ReservePricing}}
+	desired_power_state = {{orNull .DesiredPowerState}}
+	wait_for_ready = {{orNull .WaitForReady}}
 }
 `
 

@@ -1,14 +1,20 @@
 package provider
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
+	"net/http/httputil"
+	"time"
 
 	"github.com/TeraSwitch/terraform-provider/client"
+	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/booldefault"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
@@ -36,7 +42,7 @@ type MetalResource struct {
 
 // MetalResourceModel describes the resource data model.
 type MetalResourceModel struct {
-	Id                types.Int64           `tfsdk:"id"`
+	ID                types.Int64           `tfsdk:"id"`
 	ProjectID         types.Int64           `tfsdk:"project_id"`
 	RegionID          types.String          `tfsdk:"region_id"`
 	DisplayName       types.String          `tfsdk:"display_name"`
@@ -54,6 +60,7 @@ type MetalResourceModel struct {
 	TemplateID        types.Int64           `tfsdk:"template_id"`
 	ReservePricing    types.Bool            `tfsdk:"reserve_pricing"`
 	DesiredPowerState types.String          `tfsdk:"desired_power_state"`
+	WaitForReady      types.Bool            `tfsdk:"wait_for_ready"`
 }
 
 type MetalRaidArrayModel struct {
@@ -143,6 +150,7 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				MarkdownDescription: "The image to use when creating this service. Available images can be retrieved via the images endpoint.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
+					// TODO: allow updating
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
@@ -153,12 +161,18 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
 				},
+				Validators: []validator.List{
+					listvalidator.AtLeastOneOf(path.MatchRoot("password")),
+				},
 			},
 			"password": schema.StringAttribute{
 				MarkdownDescription: "The password to be set for the root user. If not provided, a random password will be generated.",
 				Optional:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.AtLeastOneOf(path.MatchRoot("ssh_key_ids")),
 				},
 			},
 			"user_data": schema.StringAttribute{
@@ -299,6 +313,12 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 					stringvalidator.OneOf("On", "Off"),
 				},
 			},
+			"wait_for_ready": schema.BoolAttribute{
+				MarkdownDescription: "Waits for the instance to become ready on create.",
+				Optional:            true,
+				Computed:            true,
+				Default:             booldefault.StaticBool(false),
+			},
 		},
 	}
 }
@@ -414,13 +434,48 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 
 	resBody := res.JSON200.Result
+	if data.WaitForReady.ValueBool() {
+		r.waitInstanceReady(ctx, *resBody.Id)
+	}
 
-	data.Id = types.Int64Value(*resBody.Id)
+	data.ID = types.Int64Value(*resBody.Id)
 
 	tflog.Trace(ctx, "created v2 metal")
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
+}
+
+func (r *MetalResource) waitInstanceReady(ctx context.Context, id int64) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(3 * time.Second):
+		}
+
+		res, err := r.providerData.client.GetV2MetalIdWithResponse(ctx, id)
+		if err != nil {
+			return fmt.Errorf("send get metal v2 request: %w", err)
+		}
+
+		if res.StatusCode() != http.StatusOK {
+			return fmt.Errorf("v2 metal returned an error: %s", string(res.Body))
+		}
+
+		status := res.JSON200.Result.Status
+		if status == nil {
+			fmt.Println("status nil")
+			continue
+		}
+
+		if *status != "Active" {
+			fmt.Println("waiting for instance active, current status:", *status)
+			continue
+		}
+
+		return nil
+	}
 }
 
 func (r *MetalResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
@@ -433,7 +488,7 @@ func (r *MetalResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
-	res, err := r.providerData.client.GetV2MetalIdWithResponse(ctx, data.Id.ValueInt64())
+	res, err := r.providerData.client.GetV2MetalIdWithResponse(ctx, data.ID.ValueInt64())
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to get v2 metal, got error: %s", err))
 		return
@@ -472,7 +527,7 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 
 	if !plan.DisplayName.Equal(state.DisplayName) {
 		tflog.Trace(ctx, "display name changed, updating...")
-		res, err := r.providerData.client.PostV2MetalIdRenameWithResponse(ctx, state.Id.ValueInt64(), client.PostV2MetalIdRenameJSONRequestBody{
+		res, err := r.providerData.client.PostV2MetalIdRenameWithResponse(ctx, state.ID.ValueInt64(), client.PostV2MetalIdRenameJSONRequestBody{
 			Name: plan.DisplayName.ValueStringPointer(),
 		})
 		if err != nil {
@@ -506,7 +561,7 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 			goto end
 		}
 
-		res, err := r.providerData.client.PostV2MetalIdPowerCommandWithResponse(ctx, state.Id.ValueInt64(),
+		res, err := r.providerData.client.PostV2MetalIdPowerCommandWithResponse(ctx, state.ID.ValueInt64(),
 			&client.PostV2MetalIdPowerCommandParams{
 				Command: PtrTo(cmd),
 			},
@@ -536,36 +591,39 @@ func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		return
 	}
 
-	// delReq, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("https://api.tsw.io/v2/Metal/%d?projectId=480", data.Id.ValueInt64()), nil)
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("Client Error",
-	// 		fmt.Sprintf("failed to create delete v2 metal request: %s", err),
-	// 	)
-	// 	return
-	// }
-	// delReq.Header.Add("Authorization", "Bearer "+r.providerData.apiKey)
+	delReq, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("https://api.tsw.io/v1/Metal/%d?projectId=480", data.ID.ValueInt64()), nil)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error",
+			fmt.Sprintf("failed to create delete v2 metal request: %s", err),
+		)
+		return
+	}
+	delReq.Header.Add("Authorization", "Bearer "+r.providerData.apiKey)
 
-	// out, _ := httputil.DumpRequest(delReq, false)
-	// fmt.Println(string(out))
+	out, _ := httputil.DumpRequest(delReq, false)
+	fmt.Println(string(out))
 
-	// res, err := r.providerData.httpClient.Do(delReq)
-	// if err != nil {
-	// 	resp.Diagnostics.AddError("Client Error",
-	// 		fmt.Sprintf("failed to send delete v2 metal request: %s", err),
-	// 	)
-	// 	return
-	// }
-	// defer res.Body.Close()
+	res, err := r.providerData.httpClient.Do(delReq)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error",
+			fmt.Sprintf("failed to send delete v2 metal request: %s", err),
+		)
+		return
+	}
+	defer res.Body.Close()
 
-	// body := bytes.NewBuffer(nil)
+	oout, _ := httputil.DumpResponse(res, true)
+	fmt.Println(string(oout))
+
+	body := bytes.NewBuffer(nil)
 	// _, _ = io.Copy(body, res.Body)
 
-	// if res.StatusCode != http.StatusOK {
-	// 	resp.Diagnostics.AddError("Client Error",
-	// 		fmt.Sprintf("delete v2 metal request errored: %s", body.String()),
-	// 	)
-	// 	return
-	// }
+	if res.StatusCode != http.StatusOK {
+		resp.Diagnostics.AddError("Client Error",
+			fmt.Sprintf("delete v2 metal request errored: %s", body.String()),
+		)
+		return
+	}
 }
 
 func (r *MetalResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

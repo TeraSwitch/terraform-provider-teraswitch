@@ -12,34 +12,9 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
-)
-
-// Defines values for AccountRole.
-const (
-	AccountRoleN0 AccountRole = 0
-	AccountRoleN1 AccountRole = 1
-	AccountRoleN2 AccountRole = 2
-	AccountRoleN3 AccountRole = 3
-	AccountRoleN4 AccountRole = 4
-)
-
-// Defines values for DeviceVendor.
-const (
-	DeviceVendorN0 DeviceVendor = 0
-	DeviceVendorN1 DeviceVendor = 1
-	DeviceVendorN2 DeviceVendor = 2
-	DeviceVendorN3 DeviceVendor = 3
-)
-
-// Defines values for EventState.
-const (
-	EventStateN0 EventState = 0
-	EventStateN1 EventState = 1
-	EventStateN2 EventState = 2
 )
 
 // Defines values for FileSystem.
@@ -60,18 +35,18 @@ const (
 
 // Defines values for Month.
 const (
-	MonthN1  Month = 1
-	MonthN10 Month = 10
-	MonthN11 Month = 11
-	MonthN12 Month = 12
-	MonthN2  Month = 2
-	MonthN3  Month = 3
-	MonthN4  Month = 4
-	MonthN5  Month = 5
-	MonthN6  Month = 6
-	MonthN7  Month = 7
-	MonthN8  Month = 8
-	MonthN9  Month = 9
+	N1  Month = 1
+	N10 Month = 10
+	N11 Month = 11
+	N12 Month = 12
+	N2  Month = 2
+	N3  Month = 3
+	N4  Month = 4
+	N5  Month = 5
+	N6  Month = 6
+	N7  Month = 7
+	N8  Month = 8
+	N9  Month = 9
 )
 
 // Defines values for PowerCommand.
@@ -95,25 +70,6 @@ const (
 	RaidTypeUnknown RaidType = "Unknown"
 )
 
-// Defines values for ServiceType.
-const (
-	ServiceTypeN0 ServiceType = 0
-	ServiceTypeN1 ServiceType = 1
-	ServiceTypeN2 ServiceType = 2
-	ServiceTypeN3 ServiceType = 3
-	ServiceTypeN4 ServiceType = 4
-	ServiceTypeN5 ServiceType = 5
-)
-
-// Defines values for Status.
-const (
-	StatusN0 Status = 0
-	StatusN1 Status = 1
-	StatusN2 Status = 2
-	StatusN3 Status = 3
-	StatusN4 Status = 4
-)
-
 // Defines values for StorageType.
 const (
 	StorageTypeHDD     StorageType = "HDD"
@@ -127,8 +83,8 @@ type Account struct {
 	AccountLocked      *bool        `json:"accountLocked,omitempty"`
 	AccountName        *string      `json:"accountName"`
 	AccountRole        *AccountRole `json:"accountRole,omitempty"`
-	Created            *time.Time   `json:"created,omitempty"`
-	Deleted            *time.Time   `json:"deleted"`
+	Created            *string      `json:"created,omitempty"`
+	Deleted            *string      `json:"deleted"`
 	ExternalIdentifier *string      `json:"externalIdentifier"`
 	Id                 *int64       `json:"id,omitempty"`
 	ObjectType         *string      `json:"objectType"`
@@ -139,7 +95,7 @@ type Account struct {
 }
 
 // AccountRole defines model for AccountRole.
-type AccountRole int32
+type AccountRole = string
 
 // ApiResponse Base class for all API responses
 type ApiResponse struct {
@@ -251,14 +207,14 @@ type CalculatePriceResponse struct {
 
 // CloudService Represents a cloud service, which is a virtual machine.
 type CloudService struct {
-	Account            *Account   `json:"account,omitempty"`
-	BillingId          *string    `json:"billingId"`
-	ContractId         *int64     `json:"contractId"`
-	Created            *time.Time `json:"created,omitempty"`
-	Deleted            *time.Time `json:"deleted"`
-	DisplayName        *string    `json:"displayName"`
-	ExternalIdentifier *string    `json:"externalIdentifier"`
-	Id                 *int64     `json:"id,omitempty"`
+	Account            *Account `json:"account,omitempty"`
+	BillingId          *string  `json:"billingId"`
+	ContractId         *int64   `json:"contractId"`
+	Created            *string  `json:"created,omitempty"`
+	Deleted            *string  `json:"deleted"`
+	DisplayName        *string  `json:"displayName"`
+	ExternalIdentifier *string  `json:"externalIdentifier"`
+	Id                 *int64   `json:"id,omitempty"`
 
 	// Image Details about the OS image applied to a service
 	Image *Image `json:"image,omitempty"`
@@ -521,7 +477,7 @@ type CreateNetworkResponse struct {
 // CreateNetworkResponseDetails Details about the newly created network
 type CreateNetworkResponseDetails struct {
 	// DateCreated The timestamp for when the network was created
-	DateCreated *time.Time `json:"dateCreated,omitempty"`
+	DateCreated *string `json:"dateCreated,omitempty"`
 
 	// DisplayName The display name of the network
 	DisplayName *string `json:"displayName"`
@@ -563,7 +519,7 @@ type CreateVolumeRequest struct {
 // CreateVolumeResponse Response to the request to create a storage volume
 type CreateVolumeResponse struct {
 	// CreatedAt The time the volume was created
-	CreatedAt *time.Time `json:"createdAt,omitempty"`
+	CreatedAt *string `json:"createdAt,omitempty"`
 
 	// Description The description of the volume
 	Description *string `json:"description"`
@@ -581,7 +537,7 @@ type CreateVolumeResponse struct {
 	Status *string `json:"status"`
 
 	// UpdatedAt The time the volume was last updated
-	UpdatedAt *time.Time `json:"updatedAt,omitempty"`
+	UpdatedAt *string `json:"updatedAt,omitempty"`
 
 	// VolumeId The id of the storage volume
 	VolumeId *string `json:"volumeId"`
@@ -681,7 +637,7 @@ type Details struct {
 }
 
 // DeviceVendor defines model for DeviceVendor.
-type DeviceVendor int32
+type DeviceVendor = string
 
 // DrivePriceResponse Details about the price of a drive option
 type DrivePriceResponse struct {
@@ -710,7 +666,7 @@ type DriveSlot struct {
 }
 
 // EventState Represents the state of an event.
-type EventState int32
+type EventState = string
 
 // ExtendVolumeRequest Details needed to extend a volume
 type ExtendVolumeRequest struct {
@@ -772,22 +728,22 @@ type GetInvoiceResponseDetails struct {
 	AccountId *int64 `json:"accountId,omitempty"`
 
 	// DatePaid The date that the invoice was paid
-	DatePaid *time.Time `json:"datePaid"`
+	DatePaid *string `json:"datePaid"`
 
 	// DueDate The due date for the invoice
-	DueDate *time.Time `json:"dueDate"`
+	DueDate *string `json:"dueDate"`
 
 	// Id The id of the invoice
 	Id *int64 `json:"id,omitempty"`
 
 	// InvoiceDate The date that the invoice was created
-	InvoiceDate *time.Time `json:"invoiceDate"`
+	InvoiceDate *string `json:"invoiceDate"`
 
 	// Lines The individual line items of the invoice
 	Lines *[]InvoiceLineResponse `json:"lines"`
 
 	// PayBefore The date to pay the invoice before
-	PayBefore *time.Time `json:"payBefore,omitempty"`
+	PayBefore *string `json:"payBefore,omitempty"`
 
 	// Status The status of the invoice. One of: Draft, Sent, Paid, Void
 	Status *string `json:"status"`
@@ -934,19 +890,19 @@ type InvoiceResponseRow struct {
 	AccountId *int64 `json:"accountId,omitempty"`
 
 	// DatePaid The date that the invoice was created in UTC time.
-	DatePaid *time.Time `json:"datePaid"`
+	DatePaid *string `json:"datePaid"`
 
 	// DueDate The due date for the invoice in UTC time.
-	DueDate *time.Time `json:"dueDate"`
+	DueDate *string `json:"dueDate"`
 
 	// Id The unique identifier of the invoice
 	Id *int64 `json:"id,omitempty"`
 
 	// InvoiceDate The date that the invoice was paid in UTC time.
-	InvoiceDate *time.Time `json:"invoiceDate"`
+	InvoiceDate *string `json:"invoiceDate"`
 
 	// PayBefore The date to pay the invoice before in UTC time.
-	PayBefore *time.Time `json:"payBefore,omitempty"`
+	PayBefore *string `json:"payBefore,omitempty"`
 
 	// Status The status of the invoice. One of: Draft, Sent, Paid, Void
 	Status *string `json:"status"`
@@ -1076,9 +1032,9 @@ type ListVolumesResponseRecordIEnumerableApiResponse struct {
 
 // LogMessage defines model for LogMessage.
 type LogMessage struct {
-	Message   *string    `json:"message"`
-	Name      *string    `json:"name"`
-	Timestamp *time.Time `json:"timestamp,omitempty"`
+	Message   *string `json:"message"`
+	Name      *string `json:"name"`
+	Timestamp *string `json:"timestamp,omitempty"`
 }
 
 // LogMessageIEnumerableApiResponse Standard response object for all API requests with additional data
@@ -1312,8 +1268,8 @@ type MetalTemplate struct {
 
 	// CreateModel Request details for creating a metal service.
 	CreateModel *CreateMetalRequest `json:"createModel,omitempty"`
-	Created     *time.Time          `json:"created,omitempty"`
-	Deleted     *time.Time          `json:"deleted"`
+	Created     *string             `json:"created,omitempty"`
+	Deleted     *string             `json:"deleted"`
 	DisplayName *string             `json:"displayName"`
 	Id          *int64              `json:"id,omitempty"`
 	ObjectType  *string             `json:"objectType"`
@@ -1463,7 +1419,7 @@ type ProvisioningEvent struct {
 	State *EventState `json:"state,omitempty"`
 
 	// Timestamp Gets or sets the timestamp when the event was created or updated.
-	Timestamp *time.Time `json:"timestamp,omitempty"`
+	Timestamp *string `json:"timestamp,omitempty"`
 }
 
 // RaidArray Describes a RAID array on a metal service.
@@ -1661,12 +1617,12 @@ type ServiceRenameRequest struct {
 }
 
 // ServiceType defines model for ServiceType.
-type ServiceType int32
+type ServiceType = string
 
 // SshKey Represents an SSH key
 type SshKey struct {
-	Created *time.Time `json:"created,omitempty"`
-	Deleted *time.Time `json:"deleted"`
+	Created *string `json:"created,omitempty"`
+	Deleted *string `json:"deleted"`
 
 	// DisplayName The display name of the SSH key
 	DisplayName *string `json:"displayName"`
@@ -1683,7 +1639,7 @@ type SshKey struct {
 }
 
 // Status Describes the status of a service
-type Status int32
+type Status = string
 
 // StorageType Describes the storage type of the drive. This could be HDD, SSD, or NVME.
 type StorageType string

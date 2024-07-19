@@ -37,6 +37,7 @@ Metal
 - `tags` (List of String) Tags to be added to the metal service.
 - `template_id` (Number) Template can be specified instead of image, partitions, sshKeyId, and userData.
 - `user_data` (String) Additional user data.
+- `wait_for_ready` (Boolean) Waits for the instance to become ready on create.
 
 ### Read-Only
 
