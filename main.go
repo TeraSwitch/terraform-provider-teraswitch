@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 
-	"github.com/TeraSwitch/terraform-provider/provider"
+	"github.com/TeraSwitch/terraform-provider/internal/provider"
 )
 
 //go:generate terraform fmt -recursive ./examples/
