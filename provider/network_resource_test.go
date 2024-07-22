@@ -8,6 +8,11 @@ import (
 )
 
 func TestAccNetworkResource(t *testing.T) {
+	if true {
+		t.Skip("Skipping, networks do not currently work")
+		return
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,

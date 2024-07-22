@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"text/template"
@@ -25,6 +26,11 @@ var (
 )
 
 func TestAccCloudComputeResource(t *testing.T) {
+	if os.Getenv("TERASWITCH_API_KEY") == "" {
+		t.Skip("Skipping, api key not provided")
+		return
+	}
+
 	cfg1 := cloudCfg_1c1g
 
 	cfg2 := cfg1

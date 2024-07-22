@@ -2,6 +2,7 @@ package provider
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 	"text/template"
@@ -41,21 +42,20 @@ var (
 	metalCfg7950 = testAccMetalResourceConfig{
 		RegionID:    PtrTo("SLC1"),
 		DisplayName: PtrTo("yeehaw-amd"),
-		TierID:      PtrTo("9254"),
+		TierID:      PtrTo("7950x"),
 		ProjectID:   PtrTo(480),
 		SSHKeyIDs:   PtrTo([]int{588}),
 		Tags:        PtrTo([]string{"tag1", "tag2"}),
-		MemoryGB:    PtrTo(384),
+		MemoryGB:    PtrTo(128),
 		Disks: PtrTo(map[string]string{
-			"nvme0n1": "480g", // boss card
-			"nvme1n1": "3.84t",
-			"nvme2n1": "3.84t",
+			"nvme0n1": "1.92t",
+			"nvme1n1": "1.92t",
 		}),
 		RaidArrays: PtrTo([]RaidArray{
 			{
 				Name:       PtrTo("md0"),
 				Type:       PtrTo("Raid1"),
-				Members:    PtrTo([]string{"nvme1n1", "nvme2n1"}),
+				Members:    PtrTo([]string{"nvme0n1", "nvme1n1"}),
 				FileSystem: PtrTo(string(client.FileSystemExt4)),
 				MountPoint: PtrTo("/"),
 			},
@@ -67,6 +67,11 @@ var (
 )
 
 func TestAccMetalResource(t *testing.T) {
+	if os.Getenv("CI") == "" {
+		t.Skip("Skipping, metal tests are not run in CI")
+		return
+	}
+
 	cfg1 := metalCfg7950
 
 	cfg2 := cfg1

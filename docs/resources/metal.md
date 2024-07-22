@@ -42,6 +42,7 @@ Metal
 ### Read-Only
 
 - `id` (Number) Id of the network
+- `ip_addresses` (List of String) IP addresses of the metal instance.
 
 <a id="nestedatt--partitions"></a>
 ### Nested Schema for `partitions`

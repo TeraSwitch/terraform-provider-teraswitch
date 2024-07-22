@@ -255,7 +255,6 @@ func (r *CloudComputeResource) Create(ctx context.Context, req resource.CreateRe
 		var diags diag.Diagnostics
 		data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, *final.IpAddresses)
 		resp.Diagnostics.Append(diags...)
-		fmt.Println("set ip addrs", data.IPAddresses.String())
 	}
 
 	tflog.Trace(ctx, "created a v2 instance")
@@ -283,7 +282,6 @@ func (r *CloudComputeResource) waitInstanceStatus(ctx context.Context, id int64,
 
 		gotStatus := res.JSON200.Result.Status
 		if gotStatus == nil {
-			fmt.Println("status nil")
 			continue
 		}
 

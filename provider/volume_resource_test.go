@@ -1,13 +1,18 @@
 package provider
 
 import (
-	"fmt"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
 func TestAccVolumeResource(t *testing.T) {
+	if os.Getenv("TERASWITCH_API_KEY") == "" {
+		t.Skip("Skipping, api key not provided")
+		return
+	}
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
@@ -51,7 +56,7 @@ func TestAccVolumeResource(t *testing.T) {
 }
 
 func testAccVolumeResourceConfig() string {
-	return fmt.Sprintf(`
+	return `
 provider "teraswitch" {}
 
 resource "teraswitch_volume" "test" {
@@ -61,5 +66,5 @@ resource "teraswitch_volume" "test" {
 	volume_type    = "nvme"
 	description    = "test 111"
 }
-`)
+`
 }

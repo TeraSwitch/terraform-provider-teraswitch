@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/TeraSwitch/terraform-provider/client"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -59,6 +61,7 @@ type MetalResourceModel struct {
 	IPXEURL           types.String          `tfsdk:"ipxe_url"`
 	TemplateID        types.Int64           `tfsdk:"template_id"`
 	ReservePricing    types.Bool            `tfsdk:"reserve_pricing"`
+	IPAddresses       types.List            `tfsdk:"ip_addresses"`
 	DesiredPowerState types.String          `tfsdk:"desired_power_state"`
 	WaitForReady      types.Bool            `tfsdk:"wait_for_ready"`
 }
@@ -304,6 +307,11 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				},
 			},
 
+			"ip_addresses": schema.ListAttribute{
+				MarkdownDescription: "IP addresses of the metal instance.",
+				Computed:            true,
+				ElementType:         types.StringType,
+			},
 			"desired_power_state": schema.StringAttribute{
 				MarkdownDescription: "The desired power state for the metal instance.",
 				Optional:            true,
@@ -435,7 +443,17 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 
 	resBody := res.JSON200.Result
 	if data.WaitForReady.ValueBool() {
-		r.waitInstanceReady(ctx, *resBody.Id)
+		final, err := r.waitInstanceReady(ctx, *resBody.Id)
+		if err != nil {
+			resp.Diagnostics.AddError("Client Error",
+				fmt.Sprintf("Unable to wait v2 metal instance ready, got error: %s", err),
+			)
+			return
+		}
+
+		var diags diag.Diagnostics
+		data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, *final.IpAddresses)
+		resp.Diagnostics.Append(diags...)
 	}
 
 	data.ID = types.Int64Value(*resBody.Id)
@@ -446,35 +464,37 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
-func (r *MetalResource) waitInstanceReady(ctx context.Context, id int64) error {
+func (r *MetalResource) waitInstanceReady(ctx context.Context, id int64) (*client.MetalService, error) {
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil, ctx.Err()
 		case <-time.After(3 * time.Second):
 		}
 
 		res, err := r.providerData.client.GetV2MetalIdWithResponse(ctx, id)
 		if err != nil {
-			return fmt.Errorf("send get metal v2 request: %w", err)
+			return nil, fmt.Errorf("send get metal v2 request: %w", err)
 		}
 
 		if res.StatusCode() != http.StatusOK {
-			return fmt.Errorf("v2 metal returned an error: %s", string(res.Body))
+			return nil, fmt.Errorf("v2 metal returned an error: %s", string(res.Body))
 		}
 
 		status := res.JSON200.Result.Status
 		if status == nil {
-			fmt.Println("status nil")
 			continue
 		}
 
 		if *status != "Active" {
-			fmt.Println("waiting for instance active, current status:", *status)
+			tflog.Debug(ctx, "waiting for instance status %q, current status %q\n", map[string]interface{}{
+				"want_status":    "Active",
+				"current_status": *status,
+			})
 			continue
 		}
 
-		return nil
+		return res.JSON200.Result, nil
 	}
 }
 
@@ -501,10 +521,6 @@ func (r *MetalResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
-	// resBody := res.JSON200.Result
-
-	fmt.Println("read")
-	fmt.Println(string(res.Body))
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
@@ -525,8 +541,11 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		return
 	}
 
-	if !plan.DisplayName.Equal(state.DisplayName) {
-		tflog.Trace(ctx, "display name changed, updating...")
+	if !plan.DisplayName.Equal(state.DisplayName) && !plan.DisplayName.IsNull() {
+		tflog.Debug(ctx, "display name changed, updating...", map[string]interface{}{
+			"old_display_name": state.DisplayName.String(),
+			"new_display_name": plan.DisplayName.String(),
+		})
 		res, err := r.providerData.client.PostV2MetalIdRenameWithResponse(ctx, state.ID.ValueInt64(), client.PostV2MetalIdRenameJSONRequestBody{
 			Name: plan.DisplayName.ValueStringPointer(),
 		})
@@ -541,12 +560,10 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 			)
 			return
 		}
-		fmt.Println("update display name")
-		fmt.Println(string(res.Body))
 		tflog.Trace(ctx, "display name updated")
 	}
 
-	if !plan.DesiredPowerState.Equal(state.DesiredPowerState) {
+	if !plan.DesiredPowerState.Equal(state.DesiredPowerState) && !plan.DesiredPowerState.IsNull() {
 		var cmd client.PowerCommand
 		switch plan.DesiredPowerState.ValueString() {
 		case "On":
@@ -555,11 +572,16 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 			cmd = client.PowerOff
 		default:
 			resp.Diagnostics.AddError("Provider Error",
-				fmt.Sprintf("unknown desired_power_state: %s", plan.DesiredPowerState.ValueString()),
+				fmt.Sprintf("unknown desired_power_state: %q", plan.DesiredPowerState.ValueString()),
 			)
 
 			goto end
 		}
+
+		tflog.Debug(ctx, "updating power state", map[string]interface{}{
+			"old_power_state": state.DesiredPowerState.String(),
+			"new_power_state": string(cmd),
+		})
 
 		res, err := r.providerData.client.PostV2MetalIdPowerCommandWithResponse(ctx, state.ID.ValueInt64(),
 			&client.PostV2MetalIdPowerCommandParams{
@@ -571,9 +593,12 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 			return
 		}
 
-		fmt.Println("update power state")
-		fmt.Println(string(res.Body))
-		tflog.Trace(ctx, "power state updated")
+		if res.StatusCode() != http.StatusOK {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update v2 metal power status, got error: %s", string(res.Body)))
+			return
+		}
+
+		tflog.Debug(ctx, "power state updated")
 	}
 
 end:
@@ -591,6 +616,7 @@ func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		return
 	}
 
+	// /v2/Metal doesn't support deletion currently
 	delReq, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("https://api.tsw.io/v1/Metal/%d?projectId=480", data.ID.ValueInt64()), nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error",
@@ -612,11 +638,8 @@ func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 	}
 	defer res.Body.Close()
 
-	oout, _ := httputil.DumpResponse(res, true)
-	fmt.Println(string(oout))
-
 	body := bytes.NewBuffer(nil)
-	// _, _ = io.Copy(body, res.Body)
+	_, _ = io.Copy(body, res.Body)
 
 	if res.StatusCode != http.StatusOK {
 		resp.Diagnostics.AddError("Client Error",

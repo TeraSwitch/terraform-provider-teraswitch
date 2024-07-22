@@ -25,7 +25,6 @@ import (
 )
 
 // Ensure provider defined types fully satisfy framework interfaces.
-// var _ datasource.DataSource = &VolumeResource{}
 var _ resource.Resource = &VolumeResource{}
 var _ resource.ResourceWithImportState = &VolumeResource{}
 
@@ -436,7 +435,8 @@ func (r *VolumeResource) ImportState(ctx context.Context, req resource.ImportSta
 			continue
 		}
 
-		vol = &_vol
+		volCpy := _vol
+		vol = &volCpy
 	}
 
 	if vol == nil {
