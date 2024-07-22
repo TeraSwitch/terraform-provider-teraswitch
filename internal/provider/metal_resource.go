@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httputil"
 	"time"
 
 	"github.com/TeraSwitch/terraform-provider/client"
@@ -433,7 +432,6 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
-	fmt.Println(string(res.Body))
 	if res.StatusCode() != http.StatusOK {
 		resp.Diagnostics.AddError("Client Error",
 			fmt.Sprintf("Unable to create get v2 metal, got error: %s", string(res.Body)),
@@ -625,9 +623,6 @@ func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		return
 	}
 	delReq.Header.Add("Authorization", "Bearer "+r.providerData.apiKey)
-
-	out, _ := httputil.DumpRequest(delReq, false)
-	fmt.Println(string(out))
 
 	res, err := r.providerData.httpClient.Do(delReq)
 	if err != nil {

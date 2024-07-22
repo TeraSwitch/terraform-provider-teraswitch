@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/TeraSwitch/terraform-provider/client"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -224,15 +223,12 @@ func (r *CloudComputeResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
-	spew.Dump(body)
-
 	res, err := r.providerData.client.PostV2InstanceWithResponse(ctx, body)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create get v2 instance, got error: %s", err))
 		return
 	}
 
-	fmt.Println(string(res.Body))
 	if res.StatusCode() != http.StatusOK {
 		resp.Diagnostics.AddError("Client Error",
 			fmt.Sprintf("Unable to create get v2 instance, got error: %s", string(res.Body)),
@@ -352,6 +348,11 @@ func (r *CloudComputeResource) Update(ctx context.Context, req resource.UpdateRe
 			goto end
 		}
 
+		tflog.Debug(ctx, "updating power state", map[string]interface{}{
+			"old_power_state": state.DesiredPowerState.String(),
+			"new_power_state": string(cmd),
+		})
+
 		res, err := r.providerData.client.PostV2InstanceIdPowerCommandWithResponse(ctx, state.ID.ValueInt64(),
 			&client.PostV2InstanceIdPowerCommandParams{
 				Command: PtrTo(cmd),
@@ -362,8 +363,11 @@ func (r *CloudComputeResource) Update(ctx context.Context, req resource.UpdateRe
 			return
 		}
 
-		fmt.Println("update power state")
-		fmt.Println(string(res.Body))
+		if res.StatusCode() != http.StatusOK {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update v2 instance power status, got error: %s", string(res.Body)))
+			return
+		}
+
 		tflog.Trace(ctx, "power state updated")
 	}
 
@@ -390,7 +394,6 @@ func (r *CloudComputeResource) Delete(ctx context.Context, req resource.DeleteRe
 		return
 	}
 
-	fmt.Println(string(res.Body))
 	if res.StatusCode() != http.StatusOK {
 		resp.Diagnostics.AddError("Client Error",
 			fmt.Sprintf("Unable to delete v2 instance, got error: %s", string(res.Body)),

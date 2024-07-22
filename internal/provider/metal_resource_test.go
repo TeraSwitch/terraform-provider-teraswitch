@@ -67,7 +67,7 @@ var (
 )
 
 func TestAccMetalResource(t *testing.T) {
-	if os.Getenv("CI") == "" {
+	if os.Getenv("CI") != "" {
 		t.Skip("Skipping, metal tests are not run in CI")
 		return
 	}

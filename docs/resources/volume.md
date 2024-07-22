@@ -17,10 +17,10 @@ Volume
 
 ### Required
 
-- `display_name` (String) The display name of the volume. This is optional.
+- `display_name` (String) The display name of the volume.
 - `region_id` (String) The ID of the region that the volume will be created in.
 - `size` (Number) The size of the volume in gibibytes (GiB).
-- `volume_type` (String) The underlying storage type of the volume, HDD or NVME.
+- `volume_type` (String) The underlying storage type of the volume. The only option currently is NVME.
 
 ### Optional
 
@@ -29,7 +29,5 @@ Volume
 
 ### Read-Only
 
-- `created_at` (String) The time that the resource was created.
-- `id` (String) Id of the volume
+- `id` (String) ID of the volume
 - `status` (String) The status of the volume.
-- `updated_at` (String) The time that the resource was last updated.

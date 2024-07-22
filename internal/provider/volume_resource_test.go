@@ -27,29 +27,31 @@ func TestAccVolumeResource(t *testing.T) {
 					resource.TestCheckResourceAttr("teraswitch_volume.test", "volume_type", "nvme"),
 					resource.TestCheckResourceAttr("teraswitch_volume.test", "description", "test 111"),
 					resource.TestCheckResourceAttrSet("teraswitch_volume.test", "status"),
-					resource.TestCheckResourceAttrSet("teraswitch_volume.test", "updated_at"),
-					resource.TestCheckResourceAttrSet("teraswitch_volume.test", "created_at"),
 				),
 			},
 			// ImportState testing
 			{
-				ResourceName:        "teraswitch_volume.test",
-				ImportState:         true,
-				ImportStateVerify:   true,
-				ImportStateIdPrefix: "45/",
+				ResourceName:      "teraswitch_volume.test",
+				ImportState:       true,
+				ImportStateVerify: true,
 				// This is not normally necessary, but is here because this
 				// example code does not have an actual upstream service.
 				// Once the Read method is able to refresh information from
 				// the upstream service, this can be removed.
-				ImportStateVerifyIgnore: []string{"configurable_attribute", "defaulted"},
+				ImportStateVerifyIgnore: []string{"status"},
 			},
 			// Update and Read testing
-			// {
-			// 	Config: testAccVolumeResourceConfig(),
-			// 	Check: resource.ComposeAggregateTestCheckFunc(
-			// 		resource.TestCheckResourceAttr("scaffolding_example.test", "configurable_attribute", "two"),
-			// 	),
-			// },
+			{
+				Config: testAccVolumeResourceConfig(),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("teraswitch_volume.test", "region_id", "PIT1"),
+					resource.TestCheckResourceAttr("teraswitch_volume.test", "display_name", "yeehaw"),
+					resource.TestCheckResourceAttr("teraswitch_volume.test", "size", "20"),
+					resource.TestCheckResourceAttr("teraswitch_volume.test", "volume_type", "nvme"),
+					resource.TestCheckResourceAttr("teraswitch_volume.test", "description", "test 111"),
+					resource.TestCheckResourceAttrSet("teraswitch_volume.test", "status"),
+				),
+			},
 			// Delete testing automatically occurs in TestCase
 		},
 	})

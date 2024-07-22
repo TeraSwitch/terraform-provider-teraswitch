@@ -7,14 +7,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/TeraSwitch/terraform-provider/client"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
-	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -39,7 +34,7 @@ type VolumeResource struct {
 
 // VolumeResourceModel describes the resource data model.
 type VolumeResourceModel struct {
-	Id          types.String `tfsdk:"id"`
+	ID          types.String `tfsdk:"id"`
 	RegionID    types.String `tfsdk:"region_id"`
 	DisplayName types.String `tfsdk:"display_name"`
 	VolumeType  types.String `tfsdk:"volume_type"`
@@ -47,8 +42,6 @@ type VolumeResourceModel struct {
 	Description types.String `tfsdk:"description"`
 	ImageName   types.String `tfsdk:"image_name"`
 	Status      types.String `tfsdk:"status"`
-	UpdatedAt   types.String `tfsdk:"updated_at"`
-	CreatedAt   types.String `tfsdk:"created_at"`
 }
 
 func (r *VolumeResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -63,7 +56,7 @@ func (r *VolumeResource) Schema(ctx context.Context, req resource.SchemaRequest,
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "Id of the volume",
+				MarkdownDescription: "ID of the volume",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -76,14 +69,14 @@ func (r *VolumeResource) Schema(ctx context.Context, req resource.SchemaRequest,
 				},
 			},
 			"display_name": schema.StringAttribute{
-				MarkdownDescription: "The display name of the volume. This is optional.",
+				MarkdownDescription: "The display name of the volume.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
 			"volume_type": schema.StringAttribute{
-				MarkdownDescription: "The underlying storage type of the volume, HDD or NVME.",
+				MarkdownDescription: "The underlying storage type of the volume. The only option currently is NVME.",
 				Required:            true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -110,20 +103,6 @@ func (r *VolumeResource) Schema(ctx context.Context, req resource.SchemaRequest,
 			"status": schema.StringAttribute{
 				MarkdownDescription: "The status of the volume.",
 				Computed:            true,
-			},
-			"updated_at": schema.StringAttribute{
-				MarkdownDescription: "The time that the resource was last updated.",
-				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
-			},
-			"created_at": schema.StringAttribute{
-				MarkdownDescription: "The time that the resource was created.",
-				Computed:            true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.UseStateForUnknown(),
-				},
 			},
 		},
 	}
@@ -232,12 +211,10 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 
 	// For the purposes of this example code, hardcoding a response value to
 	// save into the Terraform state.
-	data.Id = types.StringValue(apiRes.Result.VolumeId.String())
-	data.UpdatedAt = types.StringValue(*apiRes.Result.UpdatedAt)
-	data.CreatedAt = types.StringValue(*apiRes.Result.CreatedAt)
+	data.ID = types.StringValue(apiRes.Result.VolumeId.String())
 	data.Status = types.StringValue(*apiRes.Result.Status)
 
-	tflog.Trace(ctx, "created v2 network")
+	tflog.Debug(ctx, "created v2 volume")
 
 	// Save data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -253,13 +230,18 @@ func (r *VolumeResource) Read(ctx context.Context, req resource.ReadRequest, res
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
-	//     return
-	// }
+	vol, err := r.findVolume(ctx, data.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Failed to find volume", err.Error())
+		return
+	}
+
+	data.RegionID = types.StringPointerValue(vol.Region)
+	data.DisplayName = types.StringPointerValue(vol.DisplayName)
+	data.Size = types.Int64PointerValue(vol.Size)
+	data.VolumeType = types.StringPointerValue(vol.VolumeType)
+	data.Description = types.StringPointerValue(vol.Description)
+	data.Status = types.StringPointerValue(vol.Status)
 
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
@@ -301,7 +283,7 @@ func (r *VolumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		ProjectId: &r.providerData.projectID,
 	}, client.DeleteVolumeRequest{
 		RegionId: data.RegionID.ValueString(),
-		VolumeId: data.Id.ValueString(),
+		VolumeId: data.ID.ValueString(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error",
@@ -356,7 +338,7 @@ type VolumeResponse struct {
 	Region *string `json:"region"`
 
 	// Size The size of the volume
-	Size *string `json:"size"`
+	Size *int64 `json:"size"`
 
 	// Status The current status of the volume
 	Status *string `json:"status"`
@@ -371,106 +353,47 @@ type VolumeResponse struct {
 	VolumeType *string `json:"volumeType"`
 }
 
-func (r *VolumeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	time.Sleep(5 * time.Second)
-	importID := req.ID
-	fmt.Println("import id:", importID)
-	// resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
-
-	ids := strings.Split(req.ID, "/")
-	if len(ids) != 2 {
-		resp.Diagnostics.AddError(
-			"Invalid Import ID",
-			"Expected import ID to be in format 'region_id/volume_id'.",
-		)
-		return
-	}
-
-	regionID := ids[0]
-	volumeID := ids[1]
-
+func (r *VolumeResource) findVolume(ctx context.Context, id string) (*VolumeResponse, error) {
 	res, err := r.providerData.client.GetV2Volume(ctx, &client.GetV2VolumeParams{
 		ProjectId: &r.providerData.projectID,
-		// RegionId:  &regionID,
 	})
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"HTTP error",
-			err.Error(),
-		)
-		return
+		return nil, fmt.Errorf("error getting v2 volumes: %w", err)
 	}
 	defer res.Body.Close()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		resp.Diagnostics.AddError(
-			"HTTP error",
-			err.Error(),
-		)
-		return
+		return nil, fmt.Errorf("error getting v2 volumes body: %w", err)
 	}
 
-	fmt.Println(string(body))
 	apiRes := VolumeResponseApiResponse{}
 	err = json.NewDecoder(bytes.NewReader(body)).Decode(&apiRes)
 	if err != nil {
-		resp.Diagnostics.AddError("HTTP Error", fmt.Sprintf("Unable to get v2 volume, got error: %s", err))
-		return
+		return nil, fmt.Errorf("decode volume api response: %w", err)
 	}
 
-	// fmt.Println("status code", res.StatusCode())
-	// fmt.Println(string(res.Body))
 	if res.StatusCode != http.StatusOK {
-		resp.Diagnostics.AddError("HTTP Error",
-			fmt.Sprintf("Unable to create get v2 volume, got error: %s", *apiRes.Message),
-		)
-		return
+		return nil, fmt.Errorf("get v2 volumes returned status code %d: %s", res.StatusCode, *apiRes.Message)
 	}
 
-	spew.Dump(apiRes)
 	var vol *VolumeResponse
 	for _, _vol := range apiRes.Result {
-		if _vol.VolumeId.String() != volumeID {
+		if _vol.VolumeId.String() != id {
 			continue
 		}
 
-		volCpy := _vol
-		vol = &volCpy
+		_vol := _vol
+		vol = &_vol
 	}
 
 	if vol == nil {
-		resp.Diagnostics.AddError("Not found",
-			fmt.Sprintf("Unable to find volume with region %s and id %s", regionID, volumeID),
-		)
-		return
+		return nil, fmt.Errorf("unable to find volume %q", id)
 	}
 
-	if true {
-		return
-	}
+	return vol, nil
+}
 
-	volSize, err := strconv.Atoi(*vol.Size)
-	if err != nil {
-		resp.Diagnostics.AddError("API error",
-			fmt.Sprintf("unable to convert volume size to int: %s", err),
-		)
-		return
-	}
-
-	attrs := map[string]attr.Value{
-		"region_id":    types.StringPointerValue(vol.Region),
-		"id":           types.StringValue(vol.VolumeId.String()),
-		"display_name": types.StringPointerValue(vol.DisplayName),
-		"size":         types.Int64Value(int64(volSize)),
-		"volume_type":  types.StringPointerValue(vol.VolumeType),
-		"description":  types.StringPointerValue(vol.Description),
-		"status":       types.StringPointerValue(vol.Status),
-		"updated_at":   types.StringPointerValue(vol.UpdatedAt),
-		"created_at":   types.StringPointerValue(vol.CreatedAt),
-	}
-
-	for k, v := range attrs {
-		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root(k), v)...)
-	}
+func (r *VolumeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
