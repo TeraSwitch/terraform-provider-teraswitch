@@ -126,7 +126,7 @@ func (r *NetworkResource) Create(ctx context.Context, req resource.CreateRequest
 
 	// For the purposes of this example code, hardcoding a response value to
 	// save into the Terraform state.
-	data.Id = types.StringValue("eieio")
+	data.Id = types.StringPointerValue(res.JSON200.Result.Id)
 
 	tflog.Trace(ctx, "created a resource")
 

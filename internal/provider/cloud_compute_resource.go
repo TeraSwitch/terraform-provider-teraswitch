@@ -403,5 +403,8 @@ func (r *CloudComputeResource) Delete(ctx context.Context, req resource.DeleteRe
 }
 
 func (r *CloudComputeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	resp.Diagnostics.AddError("Not supported",
+		"Compute instance resources don't currently support importing.",
+	)
+	// resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
