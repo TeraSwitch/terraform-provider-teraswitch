@@ -8,6 +8,15 @@ resources on [Teraswitch](https://beta.tsw.io).
 To use, add the following to your Terraform configuration:
 
 ```hcl
+terraform {
+  required_providers {
+    teraswitch = {
+      source = "TeraSwitch/teraswitch"
+      version = "0.0.2"
+    }
+  }
+}
+
 provider "teraswitch" {
     api_key    = "your-api-key"
     project_id = 123
