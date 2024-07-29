@@ -13,8 +13,9 @@ description: |-
 ## Example Usage
 
 ```terraform
-provider "scaffolding" {
-  # example configuration here
+provider "teraswitch" {
+  api_key    = "your-api-key"
+  project_id = 123
 }
 ```
 

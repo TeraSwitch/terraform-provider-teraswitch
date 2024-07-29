@@ -30,7 +30,7 @@ type NetworkResource struct {
 
 // NetworkResourceModel describes the resource data model.
 type NetworkResourceModel struct {
-	Id           types.String `tfsdk:"id"`
+	ID           types.String `tfsdk:"id"`
 	RegionID     types.String `tfsdk:"region_id"`
 	DisplayName  types.String `tfsdk:"display_name"`
 	V4Subnet     types.String `tfsdk:"v4_subnet"`
@@ -44,12 +44,12 @@ func (r *NetworkResource) Metadata(ctx context.Context, req resource.MetadataReq
 func (r *NetworkResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Network",
+		MarkdownDescription: "Network (DO NOT USE)",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Computed:            true,
-				MarkdownDescription: "Id of the network",
+				MarkdownDescription: "ID of the network",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.UseStateForUnknown(),
 				},
@@ -126,7 +126,7 @@ func (r *NetworkResource) Create(ctx context.Context, req resource.CreateRequest
 
 	// For the purposes of this example code, hardcoding a response value to
 	// save into the Terraform state.
-	data.Id = types.StringPointerValue(res.JSON200.Result.Id)
+	data.ID = types.StringPointerValue(res.JSON200.Result.Id)
 
 	tflog.Trace(ctx, "created a resource")
 

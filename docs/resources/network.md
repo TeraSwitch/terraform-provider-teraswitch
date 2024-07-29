@@ -3,12 +3,12 @@
 page_title: "teraswitch_network Resource - teraswitch"
 subcategory: ""
 description: |-
-  Network
+  Network (DO NOT USE)
 ---
 
 # teraswitch_network (Resource)
 
-Network
+Network (DO NOT USE)
 
 
 
@@ -27,4 +27,4 @@ Network
 
 ### Read-Only
 
-- `id` (String) Id of the network
+- `id` (String) ID of the network
