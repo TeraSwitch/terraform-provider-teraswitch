@@ -12,7 +12,7 @@ terraform {
   required_providers {
     teraswitch = {
       source = "TeraSwitch/teraswitch"
-      version = "0.0.2"
+      version = "~> 0.0.4"
     }
   }
 }
@@ -23,12 +23,21 @@ provider "teraswitch" {
 }
 ```
 
+## Recent Updates
+
+**v0.0.4** (Upcoming)
+
+- Updated to Go 1.24
+- Updated Terraform Plugin Framework to v1.16.0
+- Updated Terraform Plugin Framework Validators to v0.18.0
+- Updated all Terraform plugin dependencies for enhanced compatibility
+
 ## Developing the Provider
 
 ### Requirements
 
 - [Terraform](https://developer.hashicorp.com/terraform/downloads) >= 1.0
-- [Go](https://golang.org/doc/install) >= 1.21
+- [Go](https://golang.org/doc/install) >= 1.24
 
 To compile the provider, run `go install`. This will build the provider and put
 the provider binary in the `$GOPATH/bin` directory.
