@@ -6,10 +6,10 @@ name: Tests
 on:
   pull_request:
     paths-ignore:
-      - "README.md"
+      - 'README.md'
   push:
     paths-ignore:
-      - "README.md"
+      - 'README.md'
 
 # Testing only needs permissions to read the repository contents.
 permissions:
@@ -22,15 +22,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.2
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.1.0
         with:
-          go-version-file: "go.mod"
+          go-version-file: 'go.mod'
           cache: true
       - run: go mod download
       - run: go build -v .
       - name: Run linters
-        uses: golangci/golangci-lint-action@a4f60bb28d35aeee14e6880718e0c85ff1882e64 # v6.0.1
+        uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8 # v6.1.1
         with:
           version: latest
 
@@ -38,12 +38,12 @@ jobs:
     name: Generate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.2
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.1.0
         with:
-          go-version-file: "go.mod"
+          go-version-file: 'go.mod'
           cache: true
-      - uses: hashicorp/setup-terraform@651471c36a6092792c552e8b1bef71e592b462d8 # v3.1.1
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_wrapper: false
       - run: go generate ./...
@@ -63,22 +63,22 @@ jobs:
       matrix:
         # list whatever Terraform versions here you would like to support
         terraform:
-          - "1.9.*"
+          - '1.9.*'
     steps:
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+      - uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938 # v4.2.2
+      - uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.1.0
         with:
-          go-version-file: "go.mod"
+          go-version-file: 'go.mod'
           cache: true
-      - uses: hashicorp/setup-terraform@651471c36a6092792c552e8b1bef71e592b462d8 # v3.1.1
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
       - run: go mod download
       - env:
-          TF_ACC: "1"
+          TF_ACC: '1'
           TERASWITCH_API_KEY: ${{ secrets.TERASWITCH_API_KEY }}
-          TERASWITCH_PROJECT_ID: "480"
-          CI: "true"
+          TERASWITCH_PROJECT_ID: '480'
+          CI: 'true'
         run: go test -v -cover ./internal/provider/ -timeout=30m
         timeout-minutes: 30
