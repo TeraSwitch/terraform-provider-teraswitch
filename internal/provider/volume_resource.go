@@ -191,7 +191,7 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create v2 volume, got error: %s", err))
 		return
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	apiRes := CreateVolumeResponseApiResponse{}
 	err = json.NewDecoder(res.Body).Decode(&apiRes)
@@ -291,7 +291,7 @@ func (r *VolumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		)
 		return
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	apiRes := ApiResponse{}
 	err = json.NewDecoder(res.Body).Decode(&apiRes)
@@ -360,7 +360,7 @@ func (r *VolumeResource) findVolume(ctx context.Context, id string) (*VolumeResp
 	if err != nil {
 		return nil, fmt.Errorf("error getting v2 volumes: %w", err)
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {

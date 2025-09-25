@@ -631,7 +631,7 @@ func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		)
 		return
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	body := bytes.NewBuffer(nil)
 	_, _ = io.Copy(body, res.Body)
