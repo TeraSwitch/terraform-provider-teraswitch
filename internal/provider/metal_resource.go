@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/TeraSwitch/terraform-provider/client"
@@ -512,11 +513,90 @@ func (r *MetalResource) Read(ctx context.Context, req resource.ReadRequest, resp
 		return
 	}
 
+	if res.StatusCode() == http.StatusNotFound {
+		// Resource no longer exists, remove from state
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
 	if res.StatusCode() != http.StatusOK {
 		resp.Diagnostics.AddError("Client Error",
 			fmt.Sprintf("Unable to get v2 metal, got error: %s", string(res.Body)),
 		)
 		return
+	}
+
+	metalService := res.JSON200.Result
+	if metalService == nil {
+		resp.Diagnostics.AddError("Client Error", "Metal service not found")
+		return
+	}
+
+	// Update the state with values from the API response
+	data.ID = types.Int64Value(*metalService.Id)
+	if metalService.ProjectId != nil {
+		data.ProjectID = types.Int64Value(*metalService.ProjectId)
+	}
+
+	if metalService.RegionId != nil {
+		data.RegionID = types.StringValue(*metalService.RegionId)
+	}
+
+	if metalService.DisplayName != nil {
+		data.DisplayName = types.StringValue(*metalService.DisplayName)
+	}
+
+	if metalService.TierId != nil {
+		data.TierID = types.StringValue(*metalService.TierId)
+	}
+
+	if metalService.ImageId != nil {
+		data.ImageID = types.StringValue(*metalService.ImageId)
+	}
+
+	if metalService.IpAddresses != nil {
+		ipList, diags := types.ListValueFrom(ctx, types.StringType, *metalService.IpAddresses)
+		resp.Diagnostics.Append(diags...)
+		data.IPAddresses = ipList
+	}
+
+	if metalService.MemoryGb != nil {
+		data.MemoryGB = types.Int64Value(int64(*metalService.MemoryGb))
+	}
+
+	if metalService.Tags != nil {
+		tagsList, diags := types.ListValueFrom(ctx, types.StringType, *metalService.Tags)
+		resp.Diagnostics.Append(diags...)
+		data.Tags = tagsList
+	}
+
+	if metalService.ReservePricing != nil {
+		data.ReservePricing = types.BoolValue(*metalService.ReservePricing)
+	}
+
+	// Set the desired power state based on current power state if not set
+	if data.DesiredPowerState.IsNull() && metalService.PowerState != nil {
+		data.DesiredPowerState = types.StringValue(*metalService.PowerState)
+	}
+
+	// Convert storage devices to disks map if available
+	if metalService.StorageDevices != nil && data.Disks.IsNull() {
+		disksMap := make(map[string]string)
+		for deviceName, device := range *metalService.StorageDevices {
+			if device.Name != nil {
+				disksMap[deviceName] = *device.Name
+			}
+		}
+		if len(disksMap) > 0 {
+			disksMapValue, diags := types.MapValueFrom(ctx, types.StringType, disksMap)
+			resp.Diagnostics.Append(diags...)
+			data.Disks = disksMapValue
+		}
+	}
+
+	// Set wait_for_ready to false if not specified during import
+	if data.WaitForReady.IsNull() {
+		data.WaitForReady = types.BoolValue(false)
 	}
 
 	// Save updated data into Terraform state
@@ -645,8 +725,30 @@ func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 }
 
 func (r *MetalResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resp.Diagnostics.AddError("Not supported",
-		"Metal resources don't currently support importing.",
-	)
-	// resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	// Parse the ID from string to int64
+	id, err := strconv.ParseInt(req.ID, 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Import Error",
+			fmt.Sprintf("Invalid resource ID format: %s. Expected a numeric ID.", req.ID),
+		)
+		return
+	}
+
+	// Create a minimal state with just the ID
+	var state MetalResourceModel
+	state.ID = types.Int64Value(id)
+
+	// Set default values for required fields to avoid null/unknown issues
+	state.WaitForReady = types.BoolValue(false)
+	state.DesiredPowerState = types.StringValue("On")
+
+	// Initialize empty typed collections to avoid type validation errors
+	state.Disks = types.MapNull(types.StringType)
+	state.Tags = types.ListNull(types.StringType)
+	state.SSHKeyIDs = types.ListNull(types.Int64Type)
+	state.IPAddresses = types.ListNull(types.StringType)
+
+	// Set the state directly - this will trigger a Read to populate the rest
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
