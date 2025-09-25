@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.0.5] - 2025-01-15
+## [0.0.6] - 2025-01-15
 
 ### Changed
 
@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed code generation workflow by ensuring Terraform CLI is available
 - Updated GoReleaser configuration to v2 format for compatibility with latest GoReleaser
 - Improved error handling in HTTP response body cleanup due to package changes
 - Fixed unused variable assignment in volume resource due to package changes

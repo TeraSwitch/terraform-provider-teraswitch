@@ -12,7 +12,7 @@ terraform {
   required_providers {
     teraswitch = {
       source = "TeraSwitch/teraswitch"
-      version = "~> 0.0.5"
+      version = "~> 0.0.6"
     }
   }
 }
@@ -23,14 +23,11 @@ provider "teraswitch" {
 }
 ```
 
-## Recent Updates
-
-**v0.0.5** (Upcoming)
+## What's New in v0.0.6
 
 - Updated to Go 1.24
 - Updated Terraform Plugin Framework to v1.16.0
-- Updated Terraform Plugin Framework Validators to v0.18.0
-- Updated all Terraform plugin dependencies for enhanced compatibility
+- Enhanced compatibility with latest Terraform plugin ecosystem
 
 ## Developing the Provider
 
