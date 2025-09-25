@@ -383,7 +383,6 @@ func (r *VolumeResource) findVolume(ctx context.Context, id string) (*VolumeResp
 			continue
 		}
 
-		_vol := _vol
 		vol = &_vol
 	}
 
