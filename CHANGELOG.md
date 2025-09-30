@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.7] - 2025-01-30
+
+### Added
+
+- **NEW**: `teraswitch_metal` data source for querying existing metal servers
+  - Supports all metal service attributes (IP addresses, pricing, status, configuration)
+  - Comprehensive error handling and validation
+  - Full schema documentation with examples
+- **NEW**: Import functionality for `teraswitch_metal` resources
+  - Import existing metal servers into Terraform state
+  - Proper state initialization and refresh
+  - Documentation with import examples
+
+### Enhanced
+
+- Improved metal resource documentation with import section
+- Enhanced test coverage for data sources
+- Better CI/CD reliability with proper test skipping
+- Added comprehensive examples for data sources and imports
+
+### Fixed
+
+- Fixed metal resource schema description (was showing "network" instead of "metal service")
+- Improved documentation generation workflow
+- Enhanced test patterns to match existing provider conventions
+
 ## [0.0.6] - 2025-01-15
 
 ### Changed

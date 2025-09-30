@@ -12,7 +12,7 @@ terraform {
   required_providers {
     teraswitch = {
       source = "TeraSwitch/teraswitch"
-      version = "~> 0.0.6"
+      version = "~> 0.0.7"
     }
   }
 }
@@ -23,11 +23,36 @@ provider "teraswitch" {
 }
 ```
 
-## What's New in v0.0.6
+## Resources and Data Sources
 
-- Updated to Go 1.24
-- Updated Terraform Plugin Framework to v1.16.0
-- Enhanced compatibility with latest Terraform plugin ecosystem
+The provider supports the following resources and data sources:
+
+### Resources
+- `teraswitch_cloud_compute` - Manage cloud compute instances
+- `teraswitch_metal` - Manage bare metal servers (now with import support!)
+- `teraswitch_network` - Manage network resources  
+- `teraswitch_volume` - Manage storage volumes
+
+### Data Sources
+- `teraswitch_metal` - Query existing metal servers (**NEW in v0.0.7**)
+
+### Example: Using the Metal Data Source
+```hcl
+data "teraswitch_metal" "existing_server" {
+  id = 12345
+}
+
+output "server_ip_addresses" {
+  value = data.teraswitch_metal.existing_server.ip_addresses
+}
+```
+
+## What's New in v0.0.7
+
+- **NEW**: Added `teraswitch_metal` data source for querying existing metal servers
+- **NEW**: Added import functionality for `teraswitch_metal` resources
+- Enhanced metal resource documentation with import examples
+- Improved test coverage and CI reliability
 
 ## Developing the Provider
 
