@@ -133,7 +133,9 @@ func (p *TeraswitchProvider) Resources(ctx context.Context) []func() resource.Re
 }
 
 func (p *TeraswitchProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{}
+	return []func() datasource.DataSource{
+		NewMetalDataSource,
+	}
 }
 
 func (p *TeraswitchProvider) Functions(ctx context.Context) []func() function.Function {
