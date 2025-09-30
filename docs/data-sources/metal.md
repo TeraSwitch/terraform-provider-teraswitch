@@ -40,13 +40,13 @@ output "metal_status" {
 - `created` (String) The date when the metal service was created.
 - `current_task` (String) The current task being performed on the metal service.
 - `display_name` (String) The display name of the metal service.
-- `hourly_price` (Float64) The current hourly price for the metal service.
+- `hourly_price` (Number) The current hourly price for the metal service.
 - `image_id` (String) The ID of the OS image applied to the metal service.
 - `ip_addresses` (List of String) The IP addresses associated with the metal service.
 - `ipv4_default_gateway` (String) The IPv4 default gateway for the metal service.
 - `ipv6_default_gateway` (String) The IPv6 default gateway for the metal service.
 - `memory_gb` (Number) The amount of memory in GB allocated to the metal service.
-- `monthly_price` (Float64) The current monthly price for the metal service.
+- `monthly_price` (Number) The current monthly price for the metal service.
 - `power_state` (String) The power state of the metal service.
 - `project_id` (Number) The ID of the project that the metal service belongs to.
 - `region_id` (String) The ID of the region where the metal service is located.
