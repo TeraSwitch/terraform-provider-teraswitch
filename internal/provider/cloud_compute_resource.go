@@ -251,6 +251,11 @@ func (r *CloudComputeResource) Create(ctx context.Context, req resource.CreateRe
 		var diags diag.Diagnostics
 		data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, *final.IpAddresses)
 		resp.Diagnostics.Append(diags...)
+	} else {
+		// When skipping wait, set IPAddresses to empty list (Terraform requires all computed values to be known after apply)
+		var diags diag.Diagnostics
+		data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, []string{})
+		resp.Diagnostics.Append(diags...)
 	}
 
 	tflog.Trace(ctx, "created a v2 instance")

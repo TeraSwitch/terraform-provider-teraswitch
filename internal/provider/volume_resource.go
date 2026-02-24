@@ -188,24 +188,49 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		VolumeType:  data.VolumeType.ValueStringPointer(),
 	})
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create v2 volume, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create volume, got error: %s", err))
 		return
 	}
 	defer func() { _ = res.Body.Close() }()
 
-	apiRes := CreateVolumeResponseApiResponse{}
-	err = json.NewDecoder(res.Body).Decode(&apiRes)
+	// Read body first to handle empty responses
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create v2 volume, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read volume response: %s", err))
 		return
 	}
 
-	// fmt.Println("status code", res.StatusCode())
-	// fmt.Println(string(res.Body))
-	if res.StatusCode != http.StatusOK {
+	// Check status code before trying to decode
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+		errMsg := string(body)
+		if errMsg == "" {
+			errMsg = fmt.Sprintf("API returned status %d with empty response", res.StatusCode)
+		}
 		resp.Diagnostics.AddError("Client Error",
-			fmt.Sprintf("Unable to create get v2 volume, got error: %s", *apiRes.Message),
+			fmt.Sprintf("Unable to create volume: %s", errMsg),
 		)
+		return
+	}
+
+	// Handle empty body
+	if len(body) == 0 {
+		resp.Diagnostics.AddError("Client Error", "Volume creation returned empty response")
+		return
+	}
+
+	apiRes := CreateVolumeResponseApiResponse{}
+	err = json.NewDecoder(bytes.NewReader(body)).Decode(&apiRes)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to decode volume response: %s (body: %s)", err, string(body)))
+		return
+	}
+
+	if apiRes.Result == nil {
+		msg := "no result in response"
+		if apiRes.Message != nil {
+			msg = *apiRes.Message
+		}
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create volume: %s", msg))
 		return
 	}
 

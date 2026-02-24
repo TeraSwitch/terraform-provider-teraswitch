@@ -189,9 +189,6 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				MarkdownDescription: "Tags to be added to the metal service.",
 				Optional:            true,
 				ElementType:         types.StringType,
-				PlanModifiers: []planmodifier.List{
-					listplanmodifier.RequiresReplace(),
-				},
 			},
 			"memory_gb": schema.Int64Attribute{
 				MarkdownDescription: "The amount of memory in GB to be allocated to the metal service.",
@@ -641,6 +638,15 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		tflog.Trace(ctx, "display name updated")
 	}
 
+	// Handle tag updates
+	if !plan.Tags.Equal(state.Tags) {
+		resp.Diagnostics.Append(r.updateTags(ctx, state.ID.ValueInt64(), state.Tags, plan.Tags)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		tflog.Trace(ctx, "tags updated")
+	}
+
 	if !plan.DesiredPowerState.Equal(state.DesiredPowerState) && !plan.DesiredPowerState.IsNull() {
 		var cmd client.PowerCommand
 		switch plan.DesiredPowerState.ValueString() {
@@ -751,4 +757,83 @@ func (r *MetalResource) ImportState(ctx context.Context, req resource.ImportStat
 
 	// Set the state directly - this will trigger a Read to populate the rest
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+// updateTags compares old and new tags and calls the appropriate API to add/remove tags
+func (r *MetalResource) updateTags(ctx context.Context, serviceID int64, oldTags, newTags types.List) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Convert tags to string slices
+	var oldTagStrings, newTagStrings []string
+
+	if !oldTags.IsNull() && !oldTags.IsUnknown() {
+		diags.Append(oldTags.ElementsAs(ctx, &oldTagStrings, false)...)
+		if diags.HasError() {
+			return diags
+		}
+	}
+
+	if !newTags.IsNull() && !newTags.IsUnknown() {
+		diags.Append(newTags.ElementsAs(ctx, &newTagStrings, false)...)
+		if diags.HasError() {
+			return diags
+		}
+	}
+
+	// Create sets for efficient lookup
+	oldTagSet := make(map[string]bool)
+	for _, tag := range oldTagStrings {
+		oldTagSet[tag] = true
+	}
+
+	newTagSet := make(map[string]bool)
+	for _, tag := range newTagStrings {
+		newTagSet[tag] = true
+	}
+
+	// Find tags to remove (in old but not in new)
+	for _, tag := range oldTagStrings {
+		if !newTagSet[tag] {
+			tflog.Debug(ctx, "removing tag", map[string]interface{}{
+				"tag":        tag,
+				"service_id": serviceID,
+			})
+			res, err := r.providerData.client.DeleteV2TagsServiceWithResponse(ctx, client.TagServiceRequest{
+				Tag:        &tag,
+				ServiceIds: &[]int64{serviceID},
+			})
+			if err != nil {
+				diags.AddError("Client Error", fmt.Sprintf("Unable to remove tag %q, got error: %s", tag, err))
+				return diags
+			}
+			if res.StatusCode() != http.StatusOK {
+				diags.AddError("Client Error", fmt.Sprintf("Unable to remove tag %q, got error: %s", tag, string(res.Body)))
+				return diags
+			}
+		}
+	}
+
+	// Find tags to add (in new but not in old)
+	for _, tag := range newTagStrings {
+		if !oldTagSet[tag] {
+			tflog.Debug(ctx, "adding tag", map[string]interface{}{
+				"tag":        tag,
+				"service_id": serviceID,
+			})
+			res, err := r.providerData.client.PostV2TagsServiceWithResponse(ctx, client.TagServiceRequest{
+				Tag:        &tag,
+				ServiceIds: &[]int64{serviceID},
+			})
+			if err != nil {
+				diags.AddError("Client Error", fmt.Sprintf("Unable to add tag %q, got error: %s", tag, err))
+				return diags
+			}
+			if res.StatusCode() != http.StatusOK {
+				diags.AddError("Client Error", fmt.Sprintf("Unable to add tag %q, got error: %s", tag, string(res.Body)))
+				return diags
+			}
+		}
+	}
+
+	return diags
 }
