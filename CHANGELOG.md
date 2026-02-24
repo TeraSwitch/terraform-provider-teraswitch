@@ -16,10 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **NEW**: `teraswitch_metal_tiers` data source for querying available metal tiers with pricing
 - **NEW**: `teraswitch_regions` data source for querying available regions
   - Supports filtering by service type (Metal, Instance, ObjectStorage, BlockStorage)
+- **NEW**: `teraswitch_tags` data source for querying all tags in use across the project
 
 ### Enhanced
 
-- Updated API client with new endpoints for SSH keys, regions, and tags
+- Updated API client with new endpoints
 - Added comprehensive documentation and examples for all new resources and data sources
 
 ## [0.0.8] - 2025-12-04

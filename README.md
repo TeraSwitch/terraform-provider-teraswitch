@@ -39,6 +39,7 @@ The provider supports the following resources and data sources:
 - `teraswitch_ssh_keys` - Query all SSH keys in a project
 - `teraswitch_metal_tiers` - Query available metal tiers with pricing
 - `teraswitch_regions` - Query available regions with service type filtering
+- `teraswitch_tags` - Query all tags in use across the project
 
 ### Example: Using the Metal Data Source
 ```hcl
@@ -108,7 +109,8 @@ output "metal_region_ids" {
 - **NEW**: Added `teraswitch_ssh_keys` data source for querying all SSH keys in a project
 - **NEW**: Added `teraswitch_metal_tiers` data source for querying available metal tiers with pricing
 - **NEW**: Added `teraswitch_regions` data source for querying available regions with service type filtering
-- Updated API client with new endpoints for SSH keys, regions, and tags
+- **NEW**: Added `teraswitch_tags` data source for querying all tags in use
+- Updated API client with new endpoints
 
 ## Developing the Provider
 
@@ -133,42 +135,3 @@ _Note:_ Acceptance tests create real resources, and often cost money to run.
 ```shell
 make testacc
 ```
-
-### Testing Against Dev Environment
-
-For internal development and testing, you can configure the provider to use the dev API:
-
-1. **Set up dev overrides** in `~/.terraformrc`:
-
-```hcl
-provider_installation {
-  dev_overrides {
-    "TeraSwitch/teraswitch" = "/path/to/your/go/bin"
-  }
-  direct {}
-}
-```
-
-2. **Set the required environment variables**:
-
-```shell
-export TERASWITCH_DEV_API_URL="http://your-dev-api-url"
-export TERASWITCH_API_KEY="your-dev-api-key"
-export TERASWITCH_PROJECT_ID="your-dev-project-id"
-```
-
-3. **Build and install the provider**:
-
-```shell
-go install
-```
-
-4. **Run Terraform** (skip `terraform init` when using dev overrides):
-
-```shell
-terraform plan
-```
-
-You should see a warning indicating that provider development overrides are in effect.
-
-When `TERASWITCH_DEV_API_URL` is set, the provider will use that URL instead of the production API.

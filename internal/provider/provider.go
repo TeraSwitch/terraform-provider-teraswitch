@@ -145,6 +145,7 @@ func (p *TeraswitchProvider) DataSources(ctx context.Context) []func() datasourc
 		NewSshKeysDataSource,
 		NewMetalTiersDataSource,
 		NewRegionsDataSource,
+		NewTagsDataSource,
 	}
 }
 
