@@ -30,9 +30,10 @@ func TestAccSshKeyResource(t *testing.T) {
 			},
 			// ImportState testing
 			{
-				ResourceName:      "teraswitch_ssh_key.test",
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            "teraswitch_ssh_key.test",
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"created"}, // API returns different timestamp formats
 			},
 			// Delete testing automatically occurs in TestCase
 		},
