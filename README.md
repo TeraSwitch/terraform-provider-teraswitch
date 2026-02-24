@@ -87,6 +87,21 @@ output "tier_ids" {
 }
 ```
 
+### Example: Querying Regions
+```hcl
+# Get all regions
+data "teraswitch_regions" "all" {}
+
+# Get only regions that support Metal
+data "teraswitch_regions" "metal" {
+  service_type = "Metal"
+}
+
+output "metal_region_ids" {
+  value = [for r in data.teraswitch_regions.metal.regions : r.id]
+}
+```
+
 ## What's New in v0.0.9
 
 - **NEW**: Added `teraswitch_ssh_key` resource for managing SSH keys
