@@ -3,7 +3,7 @@
 ## Using the provider
 
 The Terraform Teraswitch provider is a plugin that allows Terraform to manage
-resources on [Teraswitch](https://beta.tsw.io).
+resources on [TeraSwitch](https://beta.tsw.io).
 
 To use, add the following to your Terraform configuration:
 
