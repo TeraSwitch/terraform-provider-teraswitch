@@ -1,8 +1,8 @@
-# Terraform Provider for Teraswitch
+# Terraform Provider for TeraSwitch
 
 ## Using the provider
 
-The Terraform Teraswitch provider is a plugin that allows Terraform to manage
+The Terraform TeraSwitch provider is a plugin that allows Terraform to manage
 resources on [TeraSwitch](https://beta.tsw.io).
 
 To use, add the following to your Terraform configuration:
@@ -12,7 +12,7 @@ terraform {
   required_providers {
     teraswitch = {
       source = "TeraSwitch/teraswitch"
-      version = "~> 0.0.7"
+      version = "~> 0.0.9"
     }
   }
 }
@@ -38,6 +38,7 @@ The provider supports the following resources and data sources:
 - `teraswitch_metal` - Query existing metal servers
 - `teraswitch_ssh_keys` - Query all SSH keys in a project
 - `teraswitch_metal_tiers` - Query available metal tiers with pricing
+- `teraswitch_regions` - Query available regions with service type filtering
 
 ### Example: Using the Metal Data Source
 ```hcl
@@ -86,12 +87,13 @@ output "tier_ids" {
 }
 ```
 
-## What's New in v0.0.7
+## What's New in v0.0.9
 
-- **NEW**: Added `teraswitch_metal` data source for querying existing metal servers
-- **NEW**: Added import functionality for `teraswitch_metal` resources
-- Enhanced metal resource documentation with import examples
-- Improved test coverage and CI reliability
+- **NEW**: Added `teraswitch_ssh_key` resource for managing SSH keys
+- **NEW**: Added `teraswitch_ssh_keys` data source for querying all SSH keys in a project
+- **NEW**: Added `teraswitch_metal_tiers` data source for querying available metal tiers with pricing
+- **NEW**: Added `teraswitch_regions` data source for querying available regions with service type filtering
+- Updated API client with new endpoints for SSH keys, regions, and tags
 
 ## Developing the Provider
 

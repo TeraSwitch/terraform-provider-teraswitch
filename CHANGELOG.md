@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.9] - Unreleased
+
+### Added
+
+- **NEW**: `teraswitch_ssh_key` resource for managing SSH keys
+  - Create and delete SSH keys in your project
+  - Full lifecycle management with proper state handling
+- **NEW**: `teraswitch_ssh_keys` data source for querying all SSH keys in a project
+- **NEW**: `teraswitch_metal_tiers` data source for querying available metal tiers with pricing
+- **NEW**: `teraswitch_regions` data source for querying available regions
+  - Supports filtering by service type (Metal, Instance, ObjectStorage, BlockStorage)
+
+### Enhanced
+
+- Updated API client with new endpoints for SSH keys, regions, and tags
+- Added comprehensive documentation and examples for all new resources and data sources
+
+## [0.0.8] - 2025-12-04
+
+### Changed
+
+- Bumped `github.com/hashicorp/terraform-plugin-framework` dependency
+
 ## [0.0.7] - 2025-01-30
 
 ### Added
