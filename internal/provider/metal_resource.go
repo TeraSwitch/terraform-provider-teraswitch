@@ -759,7 +759,7 @@ func (r *MetalResource) ImportState(ctx context.Context, req resource.ImportStat
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// updateTags compares old and new tags and calls the appropriate API to add/remove tags
+// updateTags compares old and new tags and calls the appropriate API to add/remove tags.
 func (r *MetalResource) updateTags(ctx context.Context, serviceID int64, oldTags, newTags types.List) diag.Diagnostics {
 	var diags diag.Diagnostics
 
