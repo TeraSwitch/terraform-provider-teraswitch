@@ -1,9 +1,11 @@
 package provider
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-testing/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 )
 
@@ -13,15 +15,17 @@ func TestAccSshKeyResource(t *testing.T) {
 		return
 	}
 
+	rName := acctest.RandStringFromCharSet(8, acctest.CharSetAlphaNum)
+
 	resource.Test(t, resource.TestCase{
 		PreCheck:                 func() { testAccPreCheck(t) },
 		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			// Create and Read testing
 			{
-				Config: testAccSshKeyResourceConfig(),
+				Config: testAccSshKeyResourceConfig(rName),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("teraswitch_ssh_key.test", "display_name", "terraform-acc-test-key"),
+					resource.TestCheckResourceAttr("teraswitch_ssh_key.test", "display_name", fmt.Sprintf("tf-acc-test-%s", rName)),
 					resource.TestCheckResourceAttrSet("teraswitch_ssh_key.test", "id"),
 					resource.TestCheckResourceAttrSet("teraswitch_ssh_key.test", "key"),
 					resource.TestCheckResourceAttrSet("teraswitch_ssh_key.test", "project_id"),
@@ -40,13 +44,13 @@ func TestAccSshKeyResource(t *testing.T) {
 	})
 }
 
-func testAccSshKeyResourceConfig() string {
-	return `
+func testAccSshKeyResourceConfig(rName string) string {
+	return fmt.Sprintf(`
 provider "teraswitch" {}
 
 resource "teraswitch_ssh_key" "test" {
-	display_name = "terraform-acc-test-key"
+	display_name = "tf-acc-test-%s"
 	key          = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAccTestKeyForTerraformProviderTesting12345678 acc-test@terraform"
 }
-`
+`, rName)
 }
