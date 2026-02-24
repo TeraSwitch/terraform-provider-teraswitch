@@ -48,3 +48,4 @@ Read-Only:
 - `hourly_price` (Number) The hourly price for the tier.
 - `id` (String) The ID of the metal tier (e.g., c3.small.x86).
 - `monthly_price` (Number) The monthly price for the tier.
+- `ram` (Number) The amount of RAM in GB.
