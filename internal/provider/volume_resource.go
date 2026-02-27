@@ -234,8 +234,6 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	// For the purposes of this example code, hardcoding a response value to
-	// save into the Terraform state.
 	data.ID = types.StringValue(apiRes.Result.VolumeId.String())
 	data.Status = types.StringValue(*apiRes.Result.Status)
 

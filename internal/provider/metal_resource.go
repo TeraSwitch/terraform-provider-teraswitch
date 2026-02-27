@@ -792,6 +792,8 @@ func (r *MetalResource) updateTags(ctx context.Context, serviceID int64, oldTags
 	}
 
 	// Find tags to remove (in old but not in new)
+	// Note: We continue processing all tags even if some fail, to minimize state drift.
+	// Errors are collected and returned at the end. The next Read will reconcile actual state.
 	for _, tag := range oldTagStrings {
 		if !newTagSet[tag] {
 			tflog.Debug(ctx, "removing tag", map[string]interface{}{
@@ -804,11 +806,11 @@ func (r *MetalResource) updateTags(ctx context.Context, serviceID int64, oldTags
 			})
 			if err != nil {
 				diags.AddError("Client Error", fmt.Sprintf("Unable to remove tag %q, got error: %s", tag, err))
-				return diags
+				continue
 			}
 			if res.StatusCode() != http.StatusOK {
 				diags.AddError("Client Error", fmt.Sprintf("Unable to remove tag %q, got error: %s", tag, string(res.Body)))
-				return diags
+				continue
 			}
 		}
 	}
@@ -826,11 +828,11 @@ func (r *MetalResource) updateTags(ctx context.Context, serviceID int64, oldTags
 			})
 			if err != nil {
 				diags.AddError("Client Error", fmt.Sprintf("Unable to add tag %q, got error: %s", tag, err))
-				return diags
+				continue
 			}
 			if res.StatusCode() != http.StatusOK {
 				diags.AddError("Client Error", fmt.Sprintf("Unable to add tag %q, got error: %s", tag, string(res.Body)))
-				return diags
+				continue
 			}
 		}
 	}
