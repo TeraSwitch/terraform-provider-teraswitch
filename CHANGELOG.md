@@ -23,6 +23,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated API client with new endpoints
 - Added comprehensive documentation and examples for all new resources and data sources
 
+### Fixed
+
+- Fixed metal resource Delete function to use configured project ID and API URL instead of hardcoded values
+- Fixed metal and cloud_compute resources saving state even when power state update errors occurred (goto pattern bug)
+- Added nil checks in metal and cloud_compute Create functions to prevent panics on empty API responses
+- Added nil check for IP addresses to prevent panics when API returns null
+- Added 30-minute timeout to metal `waitInstanceReady` to prevent indefinite hangs
+- Added 15-minute timeout to cloud_compute `waitInstanceStatus` to prevent indefinite hangs
+- Fixed incorrect error messages saying "Expected *client.Client" instead of "Expected *ProviderData" across all resources
+- Fixed typo in volume resource error message ("Unable to create get v2 volume" → "Unable to delete v2 volume")
+- Added nil check for error message in volume `findVolume` function
+- Added overflow protection to `i64PtrToi32Ptr` helper function
+
 ## [0.0.8] - 2025-12-04
 
 ### Changed
