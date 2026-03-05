@@ -118,7 +118,7 @@ func (r *VolumeResource) Configure(ctx context.Context, req resource.ConfigureRe
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *ProviderData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return
@@ -325,7 +325,7 @@ func (r *VolumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	if res.StatusCode != http.StatusOK {
 		resp.Diagnostics.AddError("Client Error",
-			fmt.Sprintf("Unable to create get v2 volume, got error: %s", apiRes.Message),
+			fmt.Sprintf("Unable to delete v2 volume, got error: %s", apiRes.Message),
 		)
 		return
 	}
@@ -397,7 +397,11 @@ func (r *VolumeResource) findVolume(ctx context.Context, id string) (*VolumeResp
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("get v2 volumes returned status code %d: %s", res.StatusCode, *apiRes.Message)
+		msg := "unknown error"
+		if apiRes.Message != nil {
+			msg = *apiRes.Message
+		}
+		return nil, fmt.Errorf("get v2 volumes returned status code %d: %s", res.StatusCode, msg)
 	}
 
 	var vol *VolumeResponse

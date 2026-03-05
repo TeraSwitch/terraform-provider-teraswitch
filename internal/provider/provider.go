@@ -31,6 +31,7 @@ type ProviderData struct {
 	httpClient *http.Client
 	projectID  int64
 	apiKey     string
+	apiURL     string
 	client     *client.ClientWithResponses
 }
 
@@ -122,6 +123,7 @@ func (p *TeraswitchProvider) Configure(ctx context.Context, req provider.Configu
 		httpClient: httpClient,
 		projectID:  data.ProjectID.ValueInt64(),
 		apiKey:     data.APIKey.ValueString(),
+		apiURL:     apiURL,
 	}
 
 	// Example client configuration for data sources and resources
