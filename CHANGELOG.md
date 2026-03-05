@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.0.9] - Unreleased
+
+### Added
+
+- **NEW**: `teraswitch_ssh_key` resource for managing SSH keys
+  - Create and delete SSH keys in your project
+  - Full lifecycle management with proper state handling
+- **NEW**: `teraswitch_ssh_keys` data source for querying all SSH keys in a project
+- **NEW**: `teraswitch_metal_tiers` data source for querying available metal tiers with pricing
+- **NEW**: `teraswitch_regions` data source for querying available regions
+  - Supports filtering by service type (Metal, Instance, ObjectStorage, BlockStorage)
+- **NEW**: `teraswitch_tags` data source for querying all tags in use across the project
+
+### Enhanced
+
+- Updated API client with new endpoints
+- Added comprehensive documentation and examples for all new resources and data sources
+
+### Fixed
+
+- Fixed metal resource Delete function to use configured project ID and API URL instead of hardcoded values
+- Fixed metal and cloud_compute resources saving state even when power state update errors occurred (goto pattern bug)
+- Added nil checks in metal and cloud_compute Create functions to prevent panics on empty API responses
+- Added nil check for IP addresses to prevent panics when API returns null
+- Added 30-minute timeout to metal `waitInstanceReady` to prevent indefinite hangs
+- Added 15-minute timeout to cloud_compute `waitInstanceStatus` to prevent indefinite hangs
+- Fixed incorrect error messages saying "Expected *client.Client" instead of "Expected *ProviderData" across all resources
+- Fixed typo in volume resource error message ("Unable to create get v2 volume" → "Unable to delete v2 volume")
+- Added nil check for error message in volume `findVolume` function
+- Added overflow protection to `i64PtrToi32Ptr` helper function
+
+## [0.0.8] - 2025-12-04
+
+### Changed
+
+- Bumped `github.com/hashicorp/terraform-plugin-framework` dependency
+
 ## [0.0.7] - 2025-01-30
 
 ### Added

@@ -31,6 +31,9 @@ func TestAccCloudComputeResource(t *testing.T) {
 		return
 	}
 
+	// TODO: Re-enable when API issue is resolved - power status update returns "Unsupported Media"
+	t.Skip("Skipping due to API issue: power status update returns Unsupported Media Type")
+
 	cfg1 := cloudCfg_1c1g
 
 	cfg2 := cfg1

@@ -118,7 +118,7 @@ func (r *VolumeResource) Configure(ctx context.Context, req resource.ConfigureRe
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *ProviderData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return
@@ -188,29 +188,52 @@ func (r *VolumeResource) Create(ctx context.Context, req resource.CreateRequest,
 		VolumeType:  data.VolumeType.ValueStringPointer(),
 	})
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create v2 volume, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create volume, got error: %s", err))
 		return
 	}
 	defer func() { _ = res.Body.Close() }()
 
-	apiRes := CreateVolumeResponseApiResponse{}
-	err = json.NewDecoder(res.Body).Decode(&apiRes)
+	// Read body first to handle empty responses
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create v2 volume, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read volume response: %s", err))
 		return
 	}
 
-	// fmt.Println("status code", res.StatusCode())
-	// fmt.Println(string(res.Body))
-	if res.StatusCode != http.StatusOK {
+	// Check status code before trying to decode
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
+		errMsg := string(body)
+		if errMsg == "" {
+			errMsg = fmt.Sprintf("API returned status %d with empty response", res.StatusCode)
+		}
 		resp.Diagnostics.AddError("Client Error",
-			fmt.Sprintf("Unable to create get v2 volume, got error: %s", *apiRes.Message),
+			fmt.Sprintf("Unable to create volume: %s", errMsg),
 		)
 		return
 	}
 
-	// For the purposes of this example code, hardcoding a response value to
-	// save into the Terraform state.
+	// Handle empty body
+	if len(body) == 0 {
+		resp.Diagnostics.AddError("Client Error", "Volume creation returned empty response")
+		return
+	}
+
+	apiRes := CreateVolumeResponseApiResponse{}
+	err = json.NewDecoder(bytes.NewReader(body)).Decode(&apiRes)
+	if err != nil {
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to decode volume response: %s (body: %s)", err, string(body)))
+		return
+	}
+
+	if apiRes.Result == nil {
+		msg := "no result in response"
+		if apiRes.Message != nil {
+			msg = *apiRes.Message
+		}
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create volume: %s", msg))
+		return
+	}
+
 	data.ID = types.StringValue(apiRes.Result.VolumeId.String())
 	data.Status = types.StringValue(*apiRes.Result.Status)
 
@@ -302,7 +325,7 @@ func (r *VolumeResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 	if res.StatusCode != http.StatusOK {
 		resp.Diagnostics.AddError("Client Error",
-			fmt.Sprintf("Unable to create get v2 volume, got error: %s", apiRes.Message),
+			fmt.Sprintf("Unable to delete v2 volume, got error: %s", apiRes.Message),
 		)
 		return
 	}
@@ -374,7 +397,11 @@ func (r *VolumeResource) findVolume(ctx context.Context, id string) (*VolumeResp
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("get v2 volumes returned status code %d: %s", res.StatusCode, *apiRes.Message)
+		msg := "unknown error"
+		if apiRes.Message != nil {
+			msg = *apiRes.Message
+		}
+		return nil, fmt.Errorf("get v2 volumes returned status code %d: %s", res.StatusCode, msg)
 	}
 
 	var vol *VolumeResponse

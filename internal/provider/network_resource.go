@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -84,7 +85,7 @@ func (r *NetworkResource) Configure(ctx context.Context, req resource.ConfigureR
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *ProviderData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return
@@ -112,21 +113,40 @@ func (r *NetworkResource) Create(ctx context.Context, req resource.CreateRequest
 		V4SubnetMask: data.V4SubnetMask.ValueStringPointer(),
 	})
 	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create get v2 network, got error: %s", err))
+		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create network, got error: %s", err))
 		return
 	}
 
-	fmt.Println(string(res.Body))
-	if res.StatusCode() != http.StatusCreated {
+	// Accept both 200 OK and 201 Created as success
+	if res.StatusCode() != http.StatusOK && res.StatusCode() != http.StatusCreated {
 		resp.Diagnostics.AddError("Client Error",
-			fmt.Sprintf("Unable to create get v2 network, got error: %s", string(res.Body)),
+			fmt.Sprintf("Unable to create network, got status %d: %s", res.StatusCode(), string(res.Body)),
 		)
 		return
 	}
 
-	// For the purposes of this example code, hardcoding a response value to
-	// save into the Terraform state.
-	data.ID = types.StringPointerValue(res.JSON200.Result.Id)
+	// Handle response - JSON200 is only populated for status 200, manually decode for 201
+	var networkID *string
+	if res.JSON200 != nil && res.JSON200.Result != nil {
+		networkID = res.JSON200.Result.Id
+	} else if res.StatusCode() == http.StatusCreated && len(res.Body) > 0 {
+		// Manually decode for 201 Created
+		var createResp client.CreateNetworkResponse
+		if err := json.Unmarshal(res.Body, &createResp); err != nil {
+			resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to decode network response: %s", err))
+			return
+		}
+		if createResp.Result != nil {
+			networkID = createResp.Result.Id
+		}
+	}
+
+	if networkID == nil {
+		resp.Diagnostics.AddError("Client Error", "Network creation returned no ID")
+		return
+	}
+
+	data.ID = types.StringPointerValue(networkID)
 
 	tflog.Trace(ctx, "created a resource")
 
@@ -144,15 +164,6 @@ func (r *NetworkResource) Read(ctx context.Context, req resource.ReadRequest, re
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
-	//     return
-	// }
-
-	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -166,15 +177,6 @@ func (r *NetworkResource) Update(ctx context.Context, req resource.UpdateRequest
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to update example, got error: %s", err))
-	//     return
-	// }
-
-	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -187,14 +189,6 @@ func (r *NetworkResource) Delete(ctx context.Context, req resource.DeleteRequest
 	if resp.Diagnostics.HasError() {
 		return
 	}
-
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to delete example, got error: %s", err))
-	//     return
-	// }
 }
 
 func (r *NetworkResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {

@@ -31,6 +31,7 @@ type ProviderData struct {
 	httpClient *http.Client
 	projectID  int64
 	apiKey     string
+	apiURL     string
 	client     *client.ClientWithResponses
 }
 
@@ -97,9 +98,15 @@ func (p *TeraswitchProvider) Configure(ctx context.Context, req provider.Configu
 		}
 	}
 
+	// Determine API URL (use dev URL if set, otherwise prod)
+	apiURL := "https://api.tsw.io"
+	if devURL, ok := os.LookupEnv("TERASWITCH_DEV_API_URL"); ok {
+		apiURL = devURL
+	}
+
 	httpClient := &http.Client{}
 
-	reqClient, err := client.NewClientWithResponses("https://api.tsw.io",
+	reqClient, err := client.NewClientWithResponses(apiURL,
 		client.WithHTTPClient(httpClient),
 		client.WithRequestEditorFn(func(ctx context.Context, req *http.Request) error {
 			req.Header.Add("Authorization", "Bearer "+data.APIKey.ValueString())
@@ -116,6 +123,7 @@ func (p *TeraswitchProvider) Configure(ctx context.Context, req provider.Configu
 		httpClient: httpClient,
 		projectID:  data.ProjectID.ValueInt64(),
 		apiKey:     data.APIKey.ValueString(),
+		apiURL:     apiURL,
 	}
 
 	// Example client configuration for data sources and resources
@@ -129,12 +137,17 @@ func (p *TeraswitchProvider) Resources(ctx context.Context) []func() resource.Re
 		NewVolumeResource,
 		NewMetalResource,
 		NewCloudComputeResource,
+		NewSshKeyResource,
 	}
 }
 
 func (p *TeraswitchProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewMetalDataSource,
+		NewSshKeysDataSource,
+		NewMetalTiersDataSource,
+		NewRegionsDataSource,
+		NewTagsDataSource,
 	}
 }
 

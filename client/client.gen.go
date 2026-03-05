@@ -1467,6 +1467,21 @@ type Region struct {
 	ServiceTypes *[]ServiceType `json:"serviceTypes"`
 }
 
+// RegionIEnumerableApiResponse Standard response object for region list API requests
+type RegionIEnumerableApiResponse struct {
+	// Message Provides additional detail about the response if one is required
+	Message *string `json:"message"`
+
+	// Metadata For paginated responses, this object contains metadata about the list of items.
+	Metadata *ListMetadata `json:"metadata,omitempty"`
+
+	// Result List of regions
+	Result *[]Region `json:"result"`
+
+	// Success True if the request succeeded, false otherwise
+	Success *bool `json:"success,omitempty"`
+}
+
 // ReinstallMetalRequest defines model for ReinstallMetalRequest.
 type ReinstallMetalRequest struct {
 	// Disks Dictionary of disk names and sizes in GB. If not specified, the default configuration for the metal tier will
@@ -1638,11 +1653,59 @@ type SshKey struct {
 	ProjectId *int64 `json:"projectId,omitempty"`
 }
 
+// SshKeyApiResponse Standard response object for SSH key API requests
+type SshKeyApiResponse struct {
+	// Message Provides additional detail about the response if one is required
+	Message *string `json:"message"`
+
+	// Result Represents an SSH key
+	Result *SshKey `json:"result,omitempty"`
+
+	// Success True if the request succeeded, false otherwise
+	Success *bool `json:"success,omitempty"`
+}
+
+// SshKeyIEnumerableApiResponse Standard response object for SSH key list API requests
+type SshKeyIEnumerableApiResponse struct {
+	// Message Provides additional detail about the response if one is required
+	Message *string `json:"message"`
+
+	// Metadata For paginated responses, this object contains metadata about the list of items.
+	Metadata *ListMetadata `json:"metadata,omitempty"`
+
+	// Result List of SSH keys
+	Result *[]SshKey `json:"result"`
+
+	// Success True if the request succeeded, false otherwise
+	Success *bool `json:"success,omitempty"`
+}
+
 // Status Describes the status of a service
 type Status = string
 
 // StorageType Describes the storage type of the drive. This could be HDD, SSD, or NVME.
 type StorageType string
+
+// StringIEnumerableApiResponse Standard response object for string list API requests
+type StringIEnumerableApiResponse struct {
+	// Message Provides additional detail about the response if one is required
+	Message *string `json:"message"`
+
+	// Result List of strings
+	Result *[]string `json:"result"`
+
+	// Success True if the request succeeded, false otherwise
+	Success *bool `json:"success,omitempty"`
+}
+
+// TagServiceRequest Request model for tagging or untagging services
+type TagServiceRequest struct {
+	// ServiceIds The service IDs to tag or untag
+	ServiceIds *[]int64 `json:"serviceIds,omitempty"`
+
+	// Tag The tag name
+	Tag *string `json:"tag,omitempty"`
+}
 
 // UpdateNetworkRequest Details about what to be updated about the network
 type UpdateNetworkRequest struct {
@@ -1878,6 +1941,12 @@ type PutV2NetworkParams struct {
 	NetworkId *string `form:"networkId,omitempty" json:"networkId,omitempty"`
 }
 
+// GetV2RegionParams defines parameters for GetV2Region.
+type GetV2RegionParams struct {
+	// ServiceType Filter by service type. Valid values are: Metal, Instance, ObjectStorage, BlockStorage
+	ServiceType *string `form:"serviceType,omitempty" json:"serviceType,omitempty"`
+}
+
 // GetV2SearchParams defines parameters for GetV2Search.
 type GetV2SearchParams struct {
 	// Query The search query.
@@ -2068,6 +2137,15 @@ type PostV2PriceCalculateJSONRequestBody = CalculatePriceRequest
 
 // PostV2PriceCalculateApplicationJSONPatchPlusJSONRequestBody defines body for PostV2PriceCalculate for application/json-patch+json ContentType.
 type PostV2PriceCalculateApplicationJSONPatchPlusJSONRequestBody = CalculatePriceRequest
+
+// PostV2SshKeyJSONRequestBody defines body for PostV2SshKey for application/json ContentType.
+type PostV2SshKeyJSONRequestBody = SshKey
+
+// DeleteV2TagsServiceJSONRequestBody defines body for DeleteV2TagsService for application/json ContentType.
+type DeleteV2TagsServiceJSONRequestBody = TagServiceRequest
+
+// PostV2TagsServiceJSONRequestBody defines body for PostV2TagsService for application/json ContentType.
+type PostV2TagsServiceJSONRequestBody = TagServiceRequest
 
 // DeleteV2VolumeApplicationWildcardPlusJSONRequestBody defines body for DeleteV2Volume for application/*+json ContentType.
 type DeleteV2VolumeApplicationWildcardPlusJSONRequestBody = DeleteVolumeRequest
@@ -2325,8 +2403,38 @@ type ClientInterface interface {
 
 	PostV2PriceCalculateWithApplicationJSONPatchPlusJSONBody(ctx context.Context, body PostV2PriceCalculateApplicationJSONPatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetV2Region request
+	GetV2Region(ctx context.Context, params *GetV2RegionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetV2Search request
 	GetV2Search(ctx context.Context, params *GetV2SearchParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetV2SshKey request
+	GetV2SshKey(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostV2SshKeyWithBody request with any body
+	PostV2SshKeyWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostV2SshKey(ctx context.Context, body PostV2SshKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteV2SshKeyId request
+	DeleteV2SshKeyId(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetV2SshKeyId request
+	GetV2SshKeyId(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetV2Tags request
+	GetV2Tags(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteV2TagsServiceWithBody request with any body
+	DeleteV2TagsServiceWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	DeleteV2TagsService(ctx context.Context, body DeleteV2TagsServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PostV2TagsServiceWithBody request with any body
+	PostV2TagsServiceWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	PostV2TagsService(ctx context.Context, body PostV2TagsServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetV2Usage request
 	GetV2Usage(ctx context.Context, params *GetV2UsageParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -3049,8 +3157,140 @@ func (c *Client) PostV2PriceCalculateWithApplicationJSONPatchPlusJSONBody(ctx co
 	return c.Client.Do(req)
 }
 
+func (c *Client) GetV2Region(ctx context.Context, params *GetV2RegionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV2RegionRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 func (c *Client) GetV2Search(ctx context.Context, params *GetV2SearchParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetV2SearchRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetV2SshKey(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV2SshKeyRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostV2SshKeyWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV2SshKeyRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostV2SshKey(ctx context.Context, body PostV2SshKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV2SshKeyRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteV2SshKeyId(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteV2SshKeyIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetV2SshKeyId(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV2SshKeyIdRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetV2Tags(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetV2TagsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteV2TagsServiceWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteV2TagsServiceRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) DeleteV2TagsService(ctx context.Context, body DeleteV2TagsServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteV2TagsServiceRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostV2TagsServiceWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV2TagsServiceRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) PostV2TagsService(ctx context.Context, body PostV2TagsServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV2TagsServiceRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -5121,6 +5361,55 @@ func NewPostV2PriceCalculateRequestWithBody(server string, contentType string, b
 	return req, nil
 }
 
+// NewGetV2RegionRequest generates requests for GetV2Region
+func NewGetV2RegionRequest(server string, params *GetV2RegionParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v2/Region")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		queryValues := queryURL.Query()
+
+		if params.ServiceType != nil {
+
+			if queryFrag, err := runtime.StyleParamWithLocation("form", true, "serviceType", runtime.ParamLocationQuery, *params.ServiceType); err != nil {
+				return nil, err
+			} else if parsed, err := url.ParseQuery(queryFrag); err != nil {
+				return nil, err
+			} else {
+				for k, v := range parsed {
+					for _, v2 := range v {
+						queryValues.Add(k, v2)
+					}
+				}
+			}
+
+		}
+
+		queryURL.RawQuery = queryValues.Encode()
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetV2SearchRequest generates requests for GetV2Search
 func NewGetV2SearchRequest(server string, params *GetV2SearchParams) (*http.Request, error) {
 	var err error
@@ -5198,6 +5487,248 @@ func NewGetV2SearchRequest(server string, params *GetV2SearchParams) (*http.Requ
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewGetV2SshKeyRequest generates requests for GetV2SshKey
+func NewGetV2SshKeyRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v2/SshKey")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewPostV2SshKeyRequest calls the generic PostV2SshKey builder with application/json body
+func NewPostV2SshKeyRequest(server string, body PostV2SshKeyJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostV2SshKeyRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostV2SshKeyRequestWithBody generates requests for PostV2SshKey with any type of body
+func NewPostV2SshKeyRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v2/SshKey")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteV2SshKeyIdRequest generates requests for DeleteV2SshKeyId
+func NewDeleteV2SshKeyIdRequest(server string, id int64) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v2/SshKey/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetV2SshKeyIdRequest generates requests for GetV2SshKeyId
+func NewGetV2SshKeyIdRequest(server string, id int64) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithLocation("simple", false, "id", runtime.ParamLocationPath, id)
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v2/SshKey/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetV2TagsRequest generates requests for GetV2Tags
+func NewGetV2TagsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v2/Tags")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDeleteV2TagsServiceRequest calls the generic DeleteV2TagsService builder with application/json body
+func NewDeleteV2TagsServiceRequest(server string, body DeleteV2TagsServiceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewDeleteV2TagsServiceRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewDeleteV2TagsServiceRequestWithBody generates requests for DeleteV2TagsService with any type of body
+func NewDeleteV2TagsServiceRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v2/Tags/service")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("DELETE", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewPostV2TagsServiceRequest calls the generic PostV2TagsService builder with application/json body
+func NewPostV2TagsServiceRequest(server string, body PostV2TagsServiceJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPostV2TagsServiceRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPostV2TagsServiceRequestWithBody generates requests for PostV2TagsService with any type of body
+func NewPostV2TagsServiceRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/v2/Tags/service")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -6263,8 +6794,38 @@ type ClientWithResponsesInterface interface {
 
 	PostV2PriceCalculateWithApplicationJSONPatchPlusJSONBodyWithResponse(ctx context.Context, body PostV2PriceCalculateApplicationJSONPatchPlusJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV2PriceCalculateResponse, error)
 
+	// GetV2RegionWithResponse request
+	GetV2RegionWithResponse(ctx context.Context, params *GetV2RegionParams, reqEditors ...RequestEditorFn) (*GetV2RegionResponse, error)
+
 	// GetV2SearchWithResponse request
 	GetV2SearchWithResponse(ctx context.Context, params *GetV2SearchParams, reqEditors ...RequestEditorFn) (*GetV2SearchResponse, error)
+
+	// GetV2SshKeyWithResponse request
+	GetV2SshKeyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV2SshKeyResponse, error)
+
+	// PostV2SshKeyWithBodyWithResponse request with any body
+	PostV2SshKeyWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV2SshKeyResponse, error)
+
+	PostV2SshKeyWithResponse(ctx context.Context, body PostV2SshKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV2SshKeyResponse, error)
+
+	// DeleteV2SshKeyIdWithResponse request
+	DeleteV2SshKeyIdWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*DeleteV2SshKeyIdResponse, error)
+
+	// GetV2SshKeyIdWithResponse request
+	GetV2SshKeyIdWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*GetV2SshKeyIdResponse, error)
+
+	// GetV2TagsWithResponse request
+	GetV2TagsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV2TagsResponse, error)
+
+	// DeleteV2TagsServiceWithBodyWithResponse request with any body
+	DeleteV2TagsServiceWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeleteV2TagsServiceResponse, error)
+
+	DeleteV2TagsServiceWithResponse(ctx context.Context, body DeleteV2TagsServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*DeleteV2TagsServiceResponse, error)
+
+	// PostV2TagsServiceWithBodyWithResponse request with any body
+	PostV2TagsServiceWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV2TagsServiceResponse, error)
+
+	PostV2TagsServiceWithResponse(ctx context.Context, body PostV2TagsServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV2TagsServiceResponse, error)
 
 	// GetV2UsageWithResponse request
 	GetV2UsageWithResponse(ctx context.Context, params *GetV2UsageParams, reqEditors ...RequestEditorFn) (*GetV2UsageResponse, error)
@@ -7001,6 +7562,30 @@ func (r PostV2PriceCalculateResponse) StatusCode() int {
 	return 0
 }
 
+type GetV2RegionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *RegionIEnumerableApiResponse
+	JSON400      *ApiResponse
+	JSON401      *ApiResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetV2RegionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetV2RegionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
 type GetV2SearchResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -7017,6 +7602,172 @@ func (r GetV2SearchResponse) Status() string {
 
 // StatusCode returns HTTPResponse.StatusCode
 func (r GetV2SearchResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetV2SshKeyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SshKeyIEnumerableApiResponse
+	JSON401      *ApiResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetV2SshKeyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetV2SshKeyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostV2SshKeyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SshKeyApiResponse
+	JSON400      *ApiResponse
+	JSON401      *ApiResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PostV2SshKeyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostV2SshKeyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteV2SshKeyIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SshKeyApiResponse
+	JSON401      *ApiResponse
+	JSON404      *ApiResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteV2SshKeyIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteV2SshKeyIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetV2SshKeyIdResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *SshKeyApiResponse
+	JSON401      *ApiResponse
+	JSON404      *ApiResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetV2SshKeyIdResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetV2SshKeyIdResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GetV2TagsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *StringIEnumerableApiResponse
+	JSON401      *ApiResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetV2TagsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetV2TagsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type DeleteV2TagsServiceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiResponse
+	JSON400      *ApiResponse
+	JSON401      *ApiResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteV2TagsServiceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteV2TagsServiceResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type PostV2TagsServiceResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ApiResponse
+	JSON400      *ApiResponse
+	JSON401      *ApiResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r PostV2TagsServiceResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostV2TagsServiceResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
@@ -7735,6 +8486,15 @@ func (c *ClientWithResponses) PostV2PriceCalculateWithApplicationJSONPatchPlusJS
 	return ParsePostV2PriceCalculateResponse(rsp)
 }
 
+// GetV2RegionWithResponse request returning *GetV2RegionResponse
+func (c *ClientWithResponses) GetV2RegionWithResponse(ctx context.Context, params *GetV2RegionParams, reqEditors ...RequestEditorFn) (*GetV2RegionResponse, error) {
+	rsp, err := c.GetV2Region(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetV2RegionResponse(rsp)
+}
+
 // GetV2SearchWithResponse request returning *GetV2SearchResponse
 func (c *ClientWithResponses) GetV2SearchWithResponse(ctx context.Context, params *GetV2SearchParams, reqEditors ...RequestEditorFn) (*GetV2SearchResponse, error) {
 	rsp, err := c.GetV2Search(ctx, params, reqEditors...)
@@ -7742,6 +8502,93 @@ func (c *ClientWithResponses) GetV2SearchWithResponse(ctx context.Context, param
 		return nil, err
 	}
 	return ParseGetV2SearchResponse(rsp)
+}
+
+// GetV2SshKeyWithResponse request returning *GetV2SshKeyResponse
+func (c *ClientWithResponses) GetV2SshKeyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV2SshKeyResponse, error) {
+	rsp, err := c.GetV2SshKey(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetV2SshKeyResponse(rsp)
+}
+
+// PostV2SshKeyWithBodyWithResponse request with arbitrary body returning *PostV2SshKeyResponse
+func (c *ClientWithResponses) PostV2SshKeyWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV2SshKeyResponse, error) {
+	rsp, err := c.PostV2SshKeyWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostV2SshKeyResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostV2SshKeyWithResponse(ctx context.Context, body PostV2SshKeyJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV2SshKeyResponse, error) {
+	rsp, err := c.PostV2SshKey(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostV2SshKeyResponse(rsp)
+}
+
+// DeleteV2SshKeyIdWithResponse request returning *DeleteV2SshKeyIdResponse
+func (c *ClientWithResponses) DeleteV2SshKeyIdWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*DeleteV2SshKeyIdResponse, error) {
+	rsp, err := c.DeleteV2SshKeyId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteV2SshKeyIdResponse(rsp)
+}
+
+// GetV2SshKeyIdWithResponse request returning *GetV2SshKeyIdResponse
+func (c *ClientWithResponses) GetV2SshKeyIdWithResponse(ctx context.Context, id int64, reqEditors ...RequestEditorFn) (*GetV2SshKeyIdResponse, error) {
+	rsp, err := c.GetV2SshKeyId(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetV2SshKeyIdResponse(rsp)
+}
+
+// GetV2TagsWithResponse request returning *GetV2TagsResponse
+func (c *ClientWithResponses) GetV2TagsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetV2TagsResponse, error) {
+	rsp, err := c.GetV2Tags(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetV2TagsResponse(rsp)
+}
+
+// DeleteV2TagsServiceWithBodyWithResponse request with arbitrary body returning *DeleteV2TagsServiceResponse
+func (c *ClientWithResponses) DeleteV2TagsServiceWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*DeleteV2TagsServiceResponse, error) {
+	rsp, err := c.DeleteV2TagsServiceWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteV2TagsServiceResponse(rsp)
+}
+
+func (c *ClientWithResponses) DeleteV2TagsServiceWithResponse(ctx context.Context, body DeleteV2TagsServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*DeleteV2TagsServiceResponse, error) {
+	rsp, err := c.DeleteV2TagsService(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteV2TagsServiceResponse(rsp)
+}
+
+// PostV2TagsServiceWithBodyWithResponse request with arbitrary body returning *PostV2TagsServiceResponse
+func (c *ClientWithResponses) PostV2TagsServiceWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV2TagsServiceResponse, error) {
+	rsp, err := c.PostV2TagsServiceWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostV2TagsServiceResponse(rsp)
+}
+
+func (c *ClientWithResponses) PostV2TagsServiceWithResponse(ctx context.Context, body PostV2TagsServiceJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV2TagsServiceResponse, error) {
+	rsp, err := c.PostV2TagsService(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostV2TagsServiceResponse(rsp)
 }
 
 // GetV2UsageWithResponse request returning *GetV2UsageResponse
@@ -9088,6 +9935,46 @@ func ParsePostV2PriceCalculateResponse(rsp *http.Response) (*PostV2PriceCalculat
 	return response, nil
 }
 
+// ParseGetV2RegionResponse parses an HTTP response from a GetV2RegionWithResponse call
+func ParseGetV2RegionResponse(rsp *http.Response) (*GetV2RegionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetV2RegionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest RegionIEnumerableApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
 // ParseGetV2SearchResponse parses an HTTP response from a GetV2SearchWithResponse call
 func ParseGetV2SearchResponse(rsp *http.Response) (*GetV2SearchResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -9108,6 +9995,272 @@ func ParseGetV2SearchResponse(rsp *http.Response) (*GetV2SearchResponse, error) 
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetV2SshKeyResponse parses an HTTP response from a GetV2SshKeyWithResponse call
+func ParseGetV2SshKeyResponse(rsp *http.Response) (*GetV2SshKeyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetV2SshKeyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SshKeyIEnumerableApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostV2SshKeyResponse parses an HTTP response from a PostV2SshKeyWithResponse call
+func ParsePostV2SshKeyResponse(rsp *http.Response) (*PostV2SshKeyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostV2SshKeyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SshKeyApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteV2SshKeyIdResponse parses an HTTP response from a DeleteV2SshKeyIdWithResponse call
+func ParseDeleteV2SshKeyIdResponse(rsp *http.Response) (*DeleteV2SshKeyIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteV2SshKeyIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SshKeyApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetV2SshKeyIdResponse parses an HTTP response from a GetV2SshKeyIdWithResponse call
+func ParseGetV2SshKeyIdResponse(rsp *http.Response) (*GetV2SshKeyIdResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetV2SshKeyIdResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest SshKeyApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 404:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON404 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetV2TagsResponse parses an HTTP response from a GetV2TagsWithResponse call
+func ParseGetV2TagsResponse(rsp *http.Response) (*GetV2TagsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetV2TagsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StringIEnumerableApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseDeleteV2TagsServiceResponse parses an HTTP response from a DeleteV2TagsServiceWithResponse call
+func ParseDeleteV2TagsServiceResponse(rsp *http.Response) (*DeleteV2TagsServiceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteV2TagsServiceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParsePostV2TagsServiceResponse parses an HTTP response from a PostV2TagsServiceWithResponse call
+func ParsePostV2TagsServiceResponse(rsp *http.Response) (*PostV2TagsServiceResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostV2TagsServiceResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 401:
+		var dest ApiResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON401 = &dest
 
 	}
 

@@ -182,7 +182,7 @@ func (r *CloudComputeResource) Configure(ctx context.Context, req resource.Confi
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *ProviderData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return
@@ -236,6 +236,10 @@ func (r *CloudComputeResource) Create(ctx context.Context, req resource.CreateRe
 		return
 	}
 
+	if res.JSON200 == nil || res.JSON200.Result == nil {
+		resp.Diagnostics.AddError("Client Error", "Unable to create instance: empty response from API")
+		return
+	}
 	resBody := res.JSON200.Result
 	data.ID = types.Int64PointerValue(resBody.Id)
 
@@ -248,8 +252,19 @@ func (r *CloudComputeResource) Create(ctx context.Context, req resource.CreateRe
 			return
 		}
 
+		if final.IpAddresses != nil {
+			var diags diag.Diagnostics
+			data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, *final.IpAddresses)
+			resp.Diagnostics.Append(diags...)
+		} else {
+			var diags diag.Diagnostics
+			data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, []string{})
+			resp.Diagnostics.Append(diags...)
+		}
+	} else {
+		// When skipping wait, set IPAddresses to empty list (Terraform requires all computed values to be known after apply)
 		var diags diag.Diagnostics
-		data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, *final.IpAddresses)
+		data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, []string{})
 		resp.Diagnostics.Append(diags...)
 	}
 
@@ -260,10 +275,14 @@ func (r *CloudComputeResource) Create(ctx context.Context, req resource.CreateRe
 }
 
 func (r *CloudComputeResource) waitInstanceStatus(ctx context.Context, id int64, status string) (*client.CloudService, error) {
+	// Set a default timeout of 15 minutes for instance provisioning
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
+	defer cancel()
+
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, fmt.Errorf("timeout waiting for instance to reach status %q: %w", status, ctx.Err())
 		case <-time.After(3 * time.Second):
 		}
 
@@ -303,15 +322,6 @@ func (r *CloudComputeResource) Read(ctx context.Context, req resource.ReadReques
 		return
 	}
 
-	// If applicable, this is a great opportunity to initialize any necessary
-	// provider client data and make a call using it.
-	// httpResp, err := r.client.Do(httpReq)
-	// if err != nil {
-	//     resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to read example, got error: %s", err))
-	//     return
-	// }
-
-	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
 }
 
@@ -345,7 +355,7 @@ func (r *CloudComputeResource) Update(ctx context.Context, req resource.UpdateRe
 				fmt.Sprintf("unknown desired_power_state: %s", plan.DesiredPowerState.ValueString()),
 			)
 
-			goto end
+			return
 		}
 
 		tflog.Debug(ctx, "updating power state", map[string]interface{}{
@@ -372,7 +382,6 @@ func (r *CloudComputeResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Save updated data into Terraform state
-end:
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 

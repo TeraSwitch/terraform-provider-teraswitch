@@ -2680,6 +2680,372 @@
           }
         }
       }
+    },
+    "/v2/SshKey": {
+      "get": {
+        "tags": [
+          "SSH Keys"
+        ],
+        "summary": "List SSH Keys",
+        "description": "List all SSH keys assigned to your project",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SshKeyIEnumerableApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SSH Keys"
+        ],
+        "summary": "Create SSH Key",
+        "description": "Create a new SSH key in your project",
+        "requestBody": {
+          "description": "The SSH key to create",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SshKey"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SshKeyApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/SshKey/{id}": {
+      "get": {
+        "tags": [
+          "SSH Keys"
+        ],
+        "summary": "Get SSH Key",
+        "description": "Get an SSH key by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The ID of the SSH key to retrieve",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SshKeyApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SSH Keys"
+        ],
+        "summary": "Delete SSH Key",
+        "description": "Delete an SSH key by its ID. Once deleted, any services using this key will no longer be accessible via this key.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "The ID of the SSH key to delete",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SshKeyApiResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/Region": {
+      "get": {
+        "tags": [
+          "Regions"
+        ],
+        "summary": "List Regions",
+        "description": "List all available regions where services can be deployed. Optionally filter by service type to see only regions that support a specific service.",
+        "parameters": [
+          {
+            "name": "serviceType",
+            "in": "query",
+            "description": "Filter by service type. Valid values are: Metal, Instance, ObjectStorage, BlockStorage",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegionIEnumerableApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/Tags": {
+      "get": {
+        "tags": [
+          "Tags"
+        ],
+        "summary": "List Tags",
+        "description": "List all unique tags assigned to services in your project",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StringIEnumerableApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v2/Tags/service": {
+      "post": {
+        "tags": [
+          "Tags"
+        ],
+        "summary": "Tag Service",
+        "description": "Add a tag to one or more services",
+        "requestBody": {
+          "description": "The tag service request containing the tag name and service IDs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagServiceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Tags"
+        ],
+        "summary": "Untag Service",
+        "description": "Remove a tag from one or more services",
+        "requestBody": {
+          "description": "The tag service request containing the tag name and service IDs",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagServiceRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5463,6 +5829,33 @@
         },
         "additionalProperties": false
       },
+      "RegionIEnumerableApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the request succeeded, false otherwise"
+          },
+          "message": {
+            "type": "string",
+            "description": "Provides additional detail about the response if one is required",
+            "nullable": true
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/ListMetadata"
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Region"
+            },
+            "description": "List of regions",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Standard response object for region list API requests"
+      },
       "ReinstallMetalRequest": {
         "required": [
           "regionId",
@@ -5727,6 +6120,95 @@
         },
         "additionalProperties": false,
         "description": "Represents an SSH key"
+      },
+      "SshKeyApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the request succeeded, false otherwise"
+          },
+          "message": {
+            "type": "string",
+            "description": "Provides additional detail about the response if one is required",
+            "nullable": true
+          },
+          "result": {
+            "$ref": "#/components/schemas/SshKey"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Standard response object for SSH key API requests"
+      },
+      "SshKeyIEnumerableApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the request succeeded, false otherwise"
+          },
+          "message": {
+            "type": "string",
+            "description": "Provides additional detail about the response if one is required",
+            "nullable": true
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/ListMetadata"
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SshKey"
+            },
+            "description": "List of SSH keys",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Standard response object for SSH key list API requests"
+      },
+      "StringIEnumerableApiResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "True if the request succeeded, false otherwise"
+          },
+          "message": {
+            "type": "string",
+            "description": "Provides additional detail about the response if one is required",
+            "nullable": true
+          },
+          "result": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of strings",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Standard response object for string list API requests"
+      },
+      "TagServiceRequest": {
+        "type": "object",
+        "properties": {
+          "tag": {
+            "type": "string",
+            "description": "The tag name"
+          },
+          "serviceIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            },
+            "description": "The service IDs to tag or untag"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request model for tagging or untagging services"
       },
       "Status": {
         "enum": [],

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"strconv"
 	"time"
@@ -84,12 +85,16 @@ type MetalPartitionModel struct {
 }
 
 func i64PtrToi32Ptr(ptr *int64) *int32 {
-	var i32 *int32
-	if ptr != nil {
-		tmp := int32(*ptr)
-		i32 = &tmp
+	if ptr == nil {
+		return nil
 	}
-	return i32
+	val := *ptr
+	if val > math.MaxInt32 || val < math.MinInt32 {
+		// Value out of int32 range, return nil to avoid silent truncation
+		return nil
+	}
+	tmp := int32(val)
+	return &tmp
 }
 
 func (r *MetalResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -189,9 +194,6 @@ func (r *MetalResource) Schema(ctx context.Context, req resource.SchemaRequest, 
 				MarkdownDescription: "Tags to be added to the metal service.",
 				Optional:            true,
 				ElementType:         types.StringType,
-				PlanModifiers: []planmodifier.List{
-					listplanmodifier.RequiresReplace(),
-				},
 			},
 			"memory_gb": schema.Int64Attribute{
 				MarkdownDescription: "The amount of memory in GB to be allocated to the metal service.",
@@ -341,7 +343,7 @@ func (r *MetalResource) Configure(ctx context.Context, req resource.ConfigureReq
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *ProviderData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 
 		return
@@ -440,7 +442,12 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 		return
 	}
 
+	if res.JSON200 == nil || res.JSON200.Result == nil {
+		resp.Diagnostics.AddError("Client Error", "Unable to create v2 metal: empty response from API")
+		return
+	}
 	resBody := res.JSON200.Result
+
 	if data.WaitForReady.ValueBool() {
 		final, err := r.waitInstanceReady(ctx, *resBody.Id)
 		if err != nil {
@@ -450,9 +457,11 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 			return
 		}
 
-		var diags diag.Diagnostics
-		data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, *final.IpAddresses)
-		resp.Diagnostics.Append(diags...)
+		if final.IpAddresses != nil {
+			var diags diag.Diagnostics
+			data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, *final.IpAddresses)
+			resp.Diagnostics.Append(diags...)
+		}
 	}
 
 	data.ID = types.Int64Value(*resBody.Id)
@@ -464,10 +473,14 @@ func (r *MetalResource) Create(ctx context.Context, req resource.CreateRequest, 
 }
 
 func (r *MetalResource) waitInstanceReady(ctx context.Context, id int64) (*client.MetalService, error) {
+	// Set a default timeout of 30 minutes for metal provisioning
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Minute)
+	defer cancel()
+
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			return nil, fmt.Errorf("timeout waiting for metal instance to become ready: %w", ctx.Err())
 		case <-time.After(3 * time.Second):
 		}
 
@@ -641,6 +654,15 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		tflog.Trace(ctx, "display name updated")
 	}
 
+	// Handle tag updates
+	if !plan.Tags.Equal(state.Tags) {
+		resp.Diagnostics.Append(r.updateTags(ctx, state.ID.ValueInt64(), state.Tags, plan.Tags)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		tflog.Trace(ctx, "tags updated")
+	}
+
 	if !plan.DesiredPowerState.Equal(state.DesiredPowerState) && !plan.DesiredPowerState.IsNull() {
 		var cmd client.PowerCommand
 		switch plan.DesiredPowerState.ValueString() {
@@ -653,7 +675,7 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 				fmt.Sprintf("unknown desired_power_state: %q", plan.DesiredPowerState.ValueString()),
 			)
 
-			goto end
+			return
 		}
 
 		tflog.Debug(ctx, "updating power state", map[string]interface{}{
@@ -679,7 +701,6 @@ func (r *MetalResource) Update(ctx context.Context, req resource.UpdateRequest, 
 		tflog.Debug(ctx, "power state updated")
 	}
 
-end:
 	// Save updated data into Terraform state
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -694,8 +715,12 @@ func (r *MetalResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 		return
 	}
 
-	// /v2/Metal doesn't support deletion currently
-	delReq, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("https://api.tsw.io/v1/Metal/%d?projectId=480", data.ID.ValueInt64()), nil)
+	// /v2/Metal doesn't support deletion currently, use v1 endpoint
+	projectID := data.ProjectID.ValueInt64()
+	if projectID == 0 {
+		projectID = r.providerData.projectID
+	}
+	delReq, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/v1/Metal/%d?projectId=%d", r.providerData.apiURL, data.ID.ValueInt64(), projectID), nil)
 	if err != nil {
 		resp.Diagnostics.AddError("Client Error",
 			fmt.Sprintf("failed to create delete v2 metal request: %s", err),
@@ -751,4 +776,85 @@ func (r *MetalResource) ImportState(ctx context.Context, req resource.ImportStat
 
 	// Set the state directly - this will trigger a Read to populate the rest
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+// updateTags compares old and new tags and calls the appropriate API to add/remove tags.
+func (r *MetalResource) updateTags(ctx context.Context, serviceID int64, oldTags, newTags types.List) diag.Diagnostics {
+	var diags diag.Diagnostics
+
+	// Convert tags to string slices
+	var oldTagStrings, newTagStrings []string
+
+	if !oldTags.IsNull() && !oldTags.IsUnknown() {
+		diags.Append(oldTags.ElementsAs(ctx, &oldTagStrings, false)...)
+		if diags.HasError() {
+			return diags
+		}
+	}
+
+	if !newTags.IsNull() && !newTags.IsUnknown() {
+		diags.Append(newTags.ElementsAs(ctx, &newTagStrings, false)...)
+		if diags.HasError() {
+			return diags
+		}
+	}
+
+	// Create sets for efficient lookup
+	oldTagSet := make(map[string]bool)
+	for _, tag := range oldTagStrings {
+		oldTagSet[tag] = true
+	}
+
+	newTagSet := make(map[string]bool)
+	for _, tag := range newTagStrings {
+		newTagSet[tag] = true
+	}
+
+	// Find tags to remove (in old but not in new)
+	// Note: We continue processing all tags even if some fail, to minimize state drift.
+	// Errors are collected and returned at the end. The next Read will reconcile actual state.
+	for _, tag := range oldTagStrings {
+		if !newTagSet[tag] {
+			tflog.Debug(ctx, "removing tag", map[string]interface{}{
+				"tag":        tag,
+				"service_id": serviceID,
+			})
+			res, err := r.providerData.client.DeleteV2TagsServiceWithResponse(ctx, client.TagServiceRequest{
+				Tag:        &tag,
+				ServiceIds: &[]int64{serviceID},
+			})
+			if err != nil {
+				diags.AddError("Client Error", fmt.Sprintf("Unable to remove tag %q, got error: %s", tag, err))
+				continue
+			}
+			if res.StatusCode() != http.StatusOK {
+				diags.AddError("Client Error", fmt.Sprintf("Unable to remove tag %q, got error: %s", tag, string(res.Body)))
+				continue
+			}
+		}
+	}
+
+	// Find tags to add (in new but not in old)
+	for _, tag := range newTagStrings {
+		if !oldTagSet[tag] {
+			tflog.Debug(ctx, "adding tag", map[string]interface{}{
+				"tag":        tag,
+				"service_id": serviceID,
+			})
+			res, err := r.providerData.client.PostV2TagsServiceWithResponse(ctx, client.TagServiceRequest{
+				Tag:        &tag,
+				ServiceIds: &[]int64{serviceID},
+			})
+			if err != nil {
+				diags.AddError("Client Error", fmt.Sprintf("Unable to add tag %q, got error: %s", tag, err))
+				continue
+			}
+			if res.StatusCode() != http.StatusOK {
+				diags.AddError("Client Error", fmt.Sprintf("Unable to add tag %q, got error: %s", tag, string(res.Body)))
+				continue
+			}
+		}
+	}
+
+	return diags
 }
