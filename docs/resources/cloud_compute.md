@@ -3,12 +3,12 @@
 page_title: "teraswitch_cloud_compute Resource - teraswitch"
 subcategory: ""
 description: |-
-  Cloud Compute Instance
+  Cloud Compute Instance. Deprecated: cloud instances are no longer orderable; creating a new instance returns an error. Existing instances remain manageable (read, power, destroy).
 ---
 
 # teraswitch_cloud_compute (Resource)
 
-Cloud Compute Instance
+Cloud Compute Instance. **Deprecated:** cloud instances are no longer orderable; creating a new instance returns an error. Existing instances remain manageable (read, power, destroy).
 
 ## Example Usage
 

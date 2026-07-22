@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Deprecated
+
+- **`teraswitch_cloud_compute`**: cloud instances are no longer orderable. Creating a
+  new instance now fails fast with a clear error (the API returns HTTP 410 Gone). The
+  resource is marked deprecated. Existing instances remain fully manageable — read,
+  power, and destroy are unchanged.
+
 ## [0.0.9] - 2025-03-05
 
 ### Added

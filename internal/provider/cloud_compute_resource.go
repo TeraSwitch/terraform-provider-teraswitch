@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/TeraSwitch/terraform-provider/client"
 	"github.com/hashicorp/terraform-plugin-framework-validators/listvalidator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
-	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -62,7 +60,8 @@ func (r *CloudComputeResource) Metadata(ctx context.Context, req resource.Metada
 func (r *CloudComputeResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		// This description is used by the documentation generator and the language server.
-		MarkdownDescription: "Cloud Compute Instance",
+		MarkdownDescription: "Cloud Compute Instance. **Deprecated:** cloud instances are no longer orderable; creating a new instance returns an error. Existing instances remain manageable (read, power, destroy).",
+		DeprecationMessage:  "Cloud instances are no longer orderable. New teraswitch_cloud_compute resources cannot be created; existing instances remain manageable (read, power, destroy).",
 
 		Attributes: map[string]schema.Attribute{
 			"id": schema.Int64Attribute{
@@ -192,124 +191,14 @@ func (r *CloudComputeResource) Configure(ctx context.Context, req resource.Confi
 }
 
 func (r *CloudComputeResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var data CloudComputeResourceModel
-
-	// Read Terraform plan data into the model
-	resp.Diagnostics.Append(req.Plan.Get(ctx, &data)...)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	body := client.PostV2InstanceJSONRequestBody{
-		ProjectId:   data.ProjectID.ValueInt64Pointer(),
-		RegionId:    data.RegionID.ValueString(),
-		TierId:      data.TierID.ValueString(),
-		ImageId:     data.ImageID.ValueStringPointer(),
-		DisplayName: data.DisplayName.ValueStringPointer(),
-		Password:    data.Password.ValueStringPointer(),
-		BootSize:    i64PtrToi32Ptr(data.BootSize.ValueInt64Pointer()),
-		UserData:    data.UserData.ValueStringPointer(),
-	}
-
-	resp.Diagnostics.Append(
-		data.SSHKeyIDs.ElementsAs(ctx, &body.SshKeyIds, false)...,
+	// Cloud instances are no longer orderable (PTL-1622/PTL-1623); the create API returns
+	// HTTP 410 Gone. Fail fast with an actionable message instead of a wrapped 410 body.
+	resp.Diagnostics.AddError(
+		"Cloud instances are no longer orderable",
+		"Creating cloud compute instances has been retired and the TeraSwitch API no longer "+
+			"accepts new instance orders. Existing instances remain fully manageable (read, power, "+
+			"and destroy), but new teraswitch_cloud_compute resources cannot be created.",
 	)
-	resp.Diagnostics.Append(
-		data.Tags.ElementsAs(ctx, &body.Tags, false)...,
-	)
-
-	if resp.Diagnostics.HasError() {
-		return
-	}
-
-	res, err := r.providerData.client.PostV2InstanceWithResponse(ctx, body)
-	if err != nil {
-		resp.Diagnostics.AddError("Client Error", fmt.Sprintf("Unable to create get v2 instance, got error: %s", err))
-		return
-	}
-
-	if res.StatusCode() != http.StatusOK {
-		resp.Diagnostics.AddError("Client Error",
-			fmt.Sprintf("Unable to create get v2 instance, got error: %s", string(res.Body)),
-		)
-		return
-	}
-
-	if res.JSON200 == nil || res.JSON200.Result == nil {
-		resp.Diagnostics.AddError("Client Error", "Unable to create instance: empty response from API")
-		return
-	}
-	resBody := res.JSON200.Result
-	data.ID = types.Int64PointerValue(resBody.Id)
-
-	if !data.SkipWaitForReady.ValueBool() {
-		final, err := r.waitInstanceStatus(ctx, *resBody.Id, "Active")
-		if err != nil {
-			resp.Diagnostics.AddError("Client Error",
-				fmt.Sprintf("Unable to wait v2 instance ready, got error: %s", err),
-			)
-			return
-		}
-
-		if final.IpAddresses != nil {
-			var diags diag.Diagnostics
-			data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, *final.IpAddresses)
-			resp.Diagnostics.Append(diags...)
-		} else {
-			var diags diag.Diagnostics
-			data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, []string{})
-			resp.Diagnostics.Append(diags...)
-		}
-	} else {
-		// When skipping wait, set IPAddresses to empty list (Terraform requires all computed values to be known after apply)
-		var diags diag.Diagnostics
-		data.IPAddresses, diags = types.ListValueFrom(ctx, types.StringType, []string{})
-		resp.Diagnostics.Append(diags...)
-	}
-
-	tflog.Trace(ctx, "created a v2 instance")
-
-	// Save data into Terraform state
-	resp.Diagnostics.Append(resp.State.Set(ctx, &data)...)
-}
-
-func (r *CloudComputeResource) waitInstanceStatus(ctx context.Context, id int64, status string) (*client.CloudService, error) {
-	// Set a default timeout of 15 minutes for instance provisioning
-	ctx, cancel := context.WithTimeout(ctx, 15*time.Minute)
-	defer cancel()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return nil, fmt.Errorf("timeout waiting for instance to reach status %q: %w", status, ctx.Err())
-		case <-time.After(3 * time.Second):
-		}
-
-		res, err := r.providerData.client.GetV2InstanceIdWithResponse(ctx, id)
-		if err != nil {
-			return nil, fmt.Errorf("send get metal v2 request: %w", err)
-		}
-
-		if res.StatusCode() != http.StatusOK {
-			return nil, fmt.Errorf("v2 metal returned an error: %s", string(res.Body))
-		}
-
-		gotStatus := res.JSON200.Result.Status
-		if gotStatus == nil {
-			continue
-		}
-
-		if *gotStatus != status {
-			tflog.Debug(ctx, "waiting for instance status %q, current status %q\n", map[string]interface{}{
-				"want_status":    status,
-				"current_status": *gotStatus,
-			})
-			continue
-		}
-
-		return res.JSON200.Result, nil
-	}
 }
 
 func (r *CloudComputeResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
