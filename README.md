@@ -28,7 +28,7 @@ provider "teraswitch" {
 The provider supports the following resources and data sources:
 
 ### Resources
-- `teraswitch_cloud_compute` - Manage cloud compute instances
+- `teraswitch_cloud_compute` - **Deprecated:** cloud instances are no longer orderable; creating a new instance returns an error. Existing instances remain manageable (read, power, destroy).
 - `teraswitch_metal` - Manage bare metal servers (now with import support!)
 - `teraswitch_network` - Manage network resources
 - `teraswitch_volume` - Manage storage volumes
